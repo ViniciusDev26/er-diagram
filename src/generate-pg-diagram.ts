@@ -167,7 +167,7 @@ async function main() {
         ON rc.constraint_name = tc.constraint_name
       WHERE tc.constraint_type = 'FOREIGN KEY'
         AND tc.table_schema = 'public'
-        AND tc.table_name != 'flyway_schema_history'
+        AND tc.table_name NOT IN ${writeArrayToSqlArray(EXCLUDED_TABLES)}
       ORDER BY tc.table_name;
     `;
 
