@@ -5,6 +5,7 @@ import { PostgreSQLAdapter } from "./adapters/postgresql-adapter";
 import { MySQLAdapter } from "./adapters/mysql-adapter";
 import { MermaidGenerator } from "./generators/mermaid-generator";
 import { ReadmeWriter } from "./writers/readme-writer";
+import { GitCommitter } from "./git/committer";
 import type { DatabaseAdapter } from "./types/database-adapter";
 
 // Configuration from environment variables
@@ -14,6 +15,10 @@ const MERMAID_FILE = `${OUTPUT_DIR}/database-er-diagram.mmd`;
 const WRITE_TO_README = env.WRITE_TO_README;
 const README_PATH = env.README_PATH;
 const SHOW_INDEXES = env.SHOW_INDEXES;
+const AUTO_COMMIT = env.AUTO_COMMIT;
+const COMMIT_MESSAGE = env.COMMIT_MESSAGE;
+const COMMIT_AUTHOR_NAME = env.COMMIT_AUTHOR_NAME;
+const COMMIT_AUTHOR_EMAIL = env.COMMIT_AUTHOR_EMAIL;
 
 function createAdapter(): DatabaseAdapter {
   const adapters: Record<typeof env.DB_TYPE, DatabaseAdapter> = {
@@ -66,6 +71,25 @@ async function main() {
     }
 
     console.log("🎉 ER diagram with ENUMs generation complete!");
+
+    // Auto-commit if enabled
+    if (AUTO_COMMIT) {
+      console.log("\n🔄 Auto-commit enabled...");
+
+      const filesToCommit = [MERMAID_FILE];
+      if (WRITE_TO_README) {
+        filesToCommit.push(README_PATH);
+      }
+
+      const committer = new GitCommitter({
+        files: filesToCommit,
+        message: COMMIT_MESSAGE,
+        authorName: COMMIT_AUTHOR_NAME,
+        authorEmail: COMMIT_AUTHOR_EMAIL,
+      });
+
+      await committer.commitAndPush();
+    }
 
     // Close database connection
     await adapter.disconnect();

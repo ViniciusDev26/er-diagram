@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "generate": "bun run src/generate-pg-diagram.ts",
+    "generate": "bun run src/generate-diagram.ts",
     "test": "bun test",
     "test:postgresql": "bun test tests/integration/postgresql.test.ts",
     "test:mysql": "bun test tests/integration/mysql.test.ts",

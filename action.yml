@@ -47,6 +47,22 @@ inputs:
     description: "Whether to show database indexes in the diagram"
     required: false
     default: "true"
+  auto-commit:
+    description: "Automatically commit and push changes to the repository"
+    required: false
+    default: "false"
+  commit-message:
+    description: "Commit message for auto-commit"
+    required: false
+    default: "docs: update ER diagram [skip ci]"
+  commit-author-name:
+    description: "Author name for the commit"
+    required: false
+    default: "github-actions[bot]"
+  commit-author-email:
+    description: "Author email for the commit"
+    required: false
+    default: "41898282+github-actions[bot]@users.noreply.github.com"
 
 runs:
   using: "composite"
@@ -72,5 +88,9 @@ runs:
         README_PATH: ${{ inputs.readme-path }}
         EXCLUDED_TABLES: ${{ inputs.excluded-tables }}
         SHOW_INDEXES: ${{ inputs.show-indexes }}
-      run: bun run $GITHUB_ACTION_PATH/src/generate-pg-diagram.ts
+        AUTO_COMMIT: ${{ inputs.auto-commit }}
+        COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        COMMIT_AUTHOR_NAME: ${{ inputs.commit-author-name }}
+        COMMIT_AUTHOR_EMAIL: ${{ inputs.commit-author-email }}
+      run: bun run $GITHUB_ACTION_PATH/src/generate-diagram.ts
       shell: bash

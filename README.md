@@ -104,7 +104,7 @@ DB_PASS=secret \
 WRITE_TO_README=true \
 README_PATH=docs/README.md \
 SHOW_INDEXES=true \
-bun run generate-pg-diagram.ts
+bun run generate-diagram.ts
 ```
 
 ## Inputs
@@ -122,6 +122,10 @@ bun run generate-pg-diagram.ts
 | `readme-path` | Path to the README file | No | `README.md` |
 | `excluded-tables` | Comma-separated list of table names to exclude from the diagram | No | `flyway_schema_history` |
 | `show-indexes` | Whether to show database indexes in the diagram | No | `true` |
+| `auto-commit` | Automatically commit and push changes to the repository | No | `false` |
+| `commit-message` | Commit message for auto-commit | No | `docs: update ER diagram [skip ci]` |
+| `commit-author-name` | Author name for the commit | No | `github-actions[bot]` |
+| `commit-author-email` | Author email for the commit | No | `41898282+github-actions[bot]@users.noreply.github.com` |
 
 ## Output
 
@@ -201,6 +205,53 @@ Or via environment variable:
 ```bash
 EXCLUDED_TABLES="flyway_schema_history,temp_table" bun run generate
 ```
+
+## Auto-Commit
+
+The action can automatically commit and push diagram changes back to your repository. This is useful for keeping your documentation in sync with database schema changes.
+
+### Usage Example
+
+```yaml
+name: Generate ER Diagram
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  generate-diagram:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for auto-commit
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate ER Diagram
+        uses: ViniciusDev26/er-diagram@main
+        with:
+          db-type: postgresql
+          db-host: ${{ secrets.DB_HOST }}
+          db-name: mydb
+          db-user: ${{ secrets.DB_USER }}
+          db-pass: ${{ secrets.DB_PASSWORD }}
+          write-to-readme: true
+          auto-commit: true
+          commit-message: "docs: update database ER diagram [skip ci]"
+```
+
+### Configuration
+
+- **`auto-commit`**: Enable/disable auto-commit (default: `false`)
+- **`commit-message`**: Custom commit message (default: `docs: update ER diagram [skip ci]`)
+- **`commit-author-name`**: Commit author name (default: `github-actions[bot]`)
+- **`commit-author-email`**: Commit author email (default: `41898282+github-actions[bot]@users.noreply.github.com`)
+
+**Important Notes:**
+- The `[skip ci]` tag in the commit message prevents triggering another workflow run
+- Requires `contents: write` permission in the workflow
+- Only commits if there are actual changes to the diagram files
+- Commits both the `.mmd` file and README (if `write-to-readme: true`)
 
 ## Development
 
