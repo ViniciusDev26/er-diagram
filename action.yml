@@ -43,6 +43,10 @@ inputs:
     description: "Comma-separated list of table names to exclude from the diagram"
     required: false
     default: "flyway_schema_history"
+  show-indexes:
+    description: "Whether to show database indexes in the diagram"
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -67,5 +71,6 @@ runs:
         WRITE_TO_README: ${{ inputs.write-to-readme }}
         README_PATH: ${{ inputs.readme-path }}
         EXCLUDED_TABLES: ${{ inputs.excluded-tables }}
+        SHOW_INDEXES: ${{ inputs.show-indexes }}
       run: bun run $GITHUB_ACTION_PATH/src/generate-pg-diagram.ts
       shell: bash

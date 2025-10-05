@@ -7,6 +7,7 @@ import type {
   Column,
   Relationship,
   EnumRelationship,
+  Index,
 } from "../types/database-adapter";
 
 export interface PostgreSQLConfig {
@@ -38,9 +39,9 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
     }
   }
 
-  async getSchema(excludedTables: string[]): Promise<DatabaseSchema> {
+  async getSchema(excludedTables: string[], showIndexes = false): Promise<DatabaseSchema> {
     const enums = await this.getEnums();
-    const tables = await this.getTables(excludedTables);
+    const tables = await this.getTables(excludedTables, showIndexes);
     const relationships = await this.getRelationships(excludedTables);
     const enumRelationships = await this.getEnumRelationships(excludedTables);
 
@@ -81,7 +82,7 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
     return enums;
   }
 
-  private async getTables(excludedTables: string[]): Promise<Table[]> {
+  private async getTables(excludedTables: string[], showIndexes = false): Promise<Table[]> {
     const tableRows = await this.sql<{ tablename: string }[]>`
       SELECT tablename
       FROM pg_tables
@@ -93,10 +94,16 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
     for (const { tablename } of tableRows) {
       const columns = await this.getColumns(tablename);
-      tables.push({
+      const table: Table = {
         name: tablename,
         columns,
-      });
+      };
+
+      if (showIndexes) {
+        table.indexes = await this.getIndexes(tablename);
+      }
+
+      tables.push(table);
     }
 
     return tables;
@@ -254,5 +261,33 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
     }
 
     return enumRelationships;
+  }
+
+  private async getIndexes(tableName: string): Promise<Index[]> {
+    const indexRows = await this.sql<{
+      index_name: string;
+      column_names: string;
+      is_unique: boolean;
+    }[]>`
+      SELECT
+        i.relname AS index_name,
+        STRING_AGG(a.attname, ',' ORDER BY array_position(ix.indkey, a.attnum)) AS column_names,
+        ix.indisunique AS is_unique
+      FROM pg_index ix
+      JOIN pg_class i ON i.oid = ix.indexrelid
+      JOIN pg_class t ON t.oid = ix.indrelid
+      JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+      WHERE t.relname = ${tableName}
+        AND t.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+        AND NOT ix.indisprimary
+      GROUP BY i.relname, ix.indisunique
+      ORDER BY i.relname;
+    `;
+
+    return indexRows.map((row) => ({
+      name: row.index_name,
+      columns: row.column_names.split(','),
+      isUnique: row.is_unique,
+    }));
   }
 }

@@ -103,6 +103,7 @@ DB_USER=postgres \
 DB_PASS=secret \
 WRITE_TO_README=true \
 README_PATH=docs/README.md \
+SHOW_INDEXES=true \
 bun run generate-pg-diagram.ts
 ```
 
@@ -120,6 +121,7 @@ bun run generate-pg-diagram.ts
 | `write-to-readme` | Whether to write the diagram to the README file | No | `false` |
 | `readme-path` | Path to the README file | No | `README.md` |
 | `excluded-tables` | Comma-separated list of table names to exclude from the diagram | No | `flyway_schema_history` |
+| `show-indexes` | Whether to show database indexes in the diagram | No | `true` |
 
 ## Output
 
@@ -166,6 +168,15 @@ erDiagram
 - `PK` - Primary Key
 - `FK` - Foreign Key
 - `UK` - Unique Key
+
+### Indexes
+
+When `show-indexes` is enabled (default: `true`), the diagram will include database indexes:
+
+- `INDEX: index_name (column1, column2)` - Regular index
+- `UNIQUE INDEX: index_name (column)` - Unique index
+
+**Note:** Primary key indexes are automatically excluded as they're already indicated by `PK`.
 
 ### Relationship Types
 

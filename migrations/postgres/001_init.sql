@@ -91,3 +91,14 @@ CREATE TABLE audit_log (
     record_id INTEGER,
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create indexes for better query performance
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_order_items_product_id ON order_items(product_id);
+CREATE INDEX idx_products_name ON products(name);
+CREATE INDEX idx_reviews_product_user ON reviews(product_id, user_id);
+CREATE UNIQUE INDEX idx_payments_order_id ON payments(order_id);

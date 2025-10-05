@@ -8,6 +8,7 @@ import type {
   Column,
   Relationship,
   EnumRelationship,
+  Index,
 } from "../types/database-adapter";
 
 export interface MySQLConfig {
@@ -39,9 +40,9 @@ export class MySQLAdapter implements DatabaseAdapter {
     }
   }
 
-  async getSchema(excludedTables: string[]): Promise<DatabaseSchema> {
+  async getSchema(excludedTables: string[], showIndexes = false): Promise<DatabaseSchema> {
     const enums = await this.getEnums();
-    const tables = await this.getTables(excludedTables);
+    const tables = await this.getTables(excludedTables, showIndexes);
     const relationships = await this.getRelationships(excludedTables);
     const enumRelationships = await this.getEnumRelationships(excludedTables);
 
@@ -100,7 +101,7 @@ export class MySQLAdapter implements DatabaseAdapter {
     return enums;
   }
 
-  private async getTables(excludedTables: string[]): Promise<Table[]> {
+  private async getTables(excludedTables: string[], showIndexes = false): Promise<Table[]> {
     const placeholders = excludedTables.map(() => "?").join(",");
     const query = excludedTables.length > 0
       ? `
@@ -129,10 +130,16 @@ export class MySQLAdapter implements DatabaseAdapter {
 
     for (const row of rows) {
       const columns = await this.getColumns(row.table_name);
-      tables.push({
+      const table: Table = {
         name: row.table_name,
         columns,
-      });
+      };
+
+      if (showIndexes) {
+        table.indexes = await this.getIndexes(row.table_name);
+      }
+
+      tables.push(table);
     }
 
     return tables;
@@ -304,6 +311,30 @@ export class MySQLAdapter implements DatabaseAdapter {
     return rows.map((row) => ({
       table: row.table_name,
       enumType: `${row.table_name}_${row.column_name}_enum`,
+    }));
+  }
+
+  private async getIndexes(tableName: string): Promise<Index[]> {
+    const [rows] = await this.connection.execute<any[]>(
+      `
+      SELECT
+        INDEX_NAME as index_name,
+        GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) as column_names,
+        CASE WHEN NON_UNIQUE = 0 THEN 1 ELSE 0 END as is_unique
+      FROM INFORMATION_SCHEMA.STATISTICS
+      WHERE TABLE_SCHEMA = ?
+        AND TABLE_NAME = ?
+        AND INDEX_NAME != 'PRIMARY'
+      GROUP BY INDEX_NAME, NON_UNIQUE
+      ORDER BY INDEX_NAME
+      `,
+      [this.config.database, tableName]
+    );
+
+    return rows.map((row) => ({
+      name: row.index_name,
+      columns: row.column_names.split(','),
+      isUnique: row.is_unique === 1,
     }));
   }
 }

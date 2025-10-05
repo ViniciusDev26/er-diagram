@@ -9,11 +9,19 @@ export interface Column {
   isPrimaryKey: boolean;
   isForeignKey: boolean;
   isUnique: boolean;
+  isIndexed?: boolean;
+}
+
+export interface Index {
+  name: string;
+  columns: string[];
+  isUnique: boolean;
 }
 
 export interface Table {
   name: string;
   columns: Column[];
+  indexes?: Index[];
 }
 
 export interface Relationship {
@@ -37,5 +45,5 @@ export interface DatabaseSchema {
 export interface DatabaseAdapter {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
-  getSchema(excludedTables: string[]): Promise<DatabaseSchema>;
+  getSchema(excludedTables: string[], showIndexes?: boolean): Promise<DatabaseSchema>;
 }

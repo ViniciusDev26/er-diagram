@@ -11,6 +11,7 @@ const EnvSchema = z.object({
   WRITE_TO_README: z.string().optional().default("false").transform((val) => val === "true"),
   README_PATH: z.string().optional().default("README.md"),
   EXCLUDED_TABLES: z.string().optional().default("flyway_schema_history").transform((val) => val.split(",").map(s => s.trim())),
+  SHOW_INDEXES: z.string().optional().default("false").transform((val) => val === "true"),
 })
 
 export const env = EnvSchema.parse(process.env)

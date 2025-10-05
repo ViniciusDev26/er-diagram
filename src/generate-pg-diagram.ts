@@ -13,6 +13,7 @@ const OUTPUT_DIR = env.OUTPUT_DIR;
 const MERMAID_FILE = `${OUTPUT_DIR}/database-er-diagram.mmd`;
 const WRITE_TO_README = env.WRITE_TO_README;
 const README_PATH = env.README_PATH;
+const SHOW_INDEXES = env.SHOW_INDEXES;
 
 function createAdapter(): DatabaseAdapter {
   const adapters: Record<typeof env.DB_TYPE, DatabaseAdapter> = {
@@ -47,7 +48,7 @@ async function main() {
     await adapter.connect();
 
     // Get database schema using adapter
-    const schema = await adapter.getSchema(EXCLUDED_TABLES);
+    const schema = await adapter.getSchema(EXCLUDED_TABLES, SHOW_INDEXES);
 
     // Generate Mermaid diagram
     const generator = new MermaidGenerator();

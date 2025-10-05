@@ -52,6 +52,16 @@ export class MermaidGenerator {
         result += `        ${column.name} ${cleanType}${keyIndicator}\n`;
       }
 
+      // Add indexes if available
+      if (table.indexes && table.indexes.length > 0) {
+        result += "\n";
+        for (const index of table.indexes) {
+          const indexType = index.isUnique ? "UNIQUE INDEX" : "INDEX";
+          const columns = index.columns.join(", ");
+          result += `        string "${indexType}: ${index.name} (${columns})"\n`;
+        }
+      }
+
       result += "    }\n";
     }
 

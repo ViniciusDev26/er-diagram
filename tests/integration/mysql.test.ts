@@ -197,4 +197,91 @@ describe("MySQL Integration Tests", () => {
     expect(priceColumn).toBeDefined();
     expect(priceColumn?.type).toContain("decimal");
   });
+
+  test("should extract indexes when showIndexes is true", async () => {
+    const schema = await adapter.getSchema(["flyway_schema_history", "audit_log"], true);
+
+    // Check that users table has indexes
+    const usersTable = schema.tables.find((t) => t.name === "users");
+    expect(usersTable).toBeDefined();
+    expect(usersTable?.indexes).toBeDefined();
+    expect(usersTable?.indexes?.length).toBeGreaterThan(0);
+
+    // Check for specific indexes
+    const statusIndex = usersTable?.indexes?.find((idx) => idx.name === "idx_users_status");
+    expect(statusIndex).toBeDefined();
+    expect(statusIndex?.columns).toContain("status");
+    expect(statusIndex?.isUnique).toBe(false);
+
+    const emailIndex = usersTable?.indexes?.find((idx) => idx.name === "idx_users_email");
+    expect(emailIndex).toBeDefined();
+    expect(emailIndex?.columns).toContain("email");
+  });
+
+  test("should not extract indexes when showIndexes is false", async () => {
+    const schema = await adapter.getSchema(["flyway_schema_history", "audit_log"], false);
+
+    // Indexes should be undefined or empty
+    for (const table of schema.tables) {
+      expect(table.indexes).toBeUndefined();
+    }
+  });
+
+  test("should exclude PRIMARY key indexes", async () => {
+    const schema = await adapter.getSchema(["flyway_schema_history", "audit_log"], true);
+
+    // Check that no PRIMARY key indexes are included
+    for (const table of schema.tables) {
+      if (table.indexes) {
+        for (const index of table.indexes) {
+          expect(index.name).not.toBe("PRIMARY");
+        }
+      }
+    }
+  });
+
+  test("should identify UNIQUE indexes correctly", async () => {
+    const schema = await adapter.getSchema(["flyway_schema_history", "audit_log"], true);
+
+    // Check payments table for unique index
+    const paymentsTable = schema.tables.find((t) => t.name === "payments");
+    expect(paymentsTable).toBeDefined();
+
+    const uniqueIndex = paymentsTable?.indexes?.find((idx) => idx.name === "idx_payments_order_id");
+    expect(uniqueIndex).toBeDefined();
+    expect(uniqueIndex?.isUnique).toBe(true);
+  });
+
+  test("should handle composite indexes correctly", async () => {
+    const schema = await adapter.getSchema(["flyway_schema_history", "audit_log"], true);
+
+    // Check reviews table for composite index
+    const reviewsTable = schema.tables.find((t) => t.name === "reviews");
+    expect(reviewsTable).toBeDefined();
+
+    const compositeIndex = reviewsTable?.indexes?.find((idx) => idx.name === "idx_reviews_product_user");
+    expect(compositeIndex).toBeDefined();
+    expect(compositeIndex?.columns.length).toBe(2);
+    expect(compositeIndex?.columns).toContain("product_id");
+    expect(compositeIndex?.columns).toContain("user_id");
+  });
+
+  test("Mermaid diagram should contain indexes when showIndexes is true", async () => {
+    const schema = await adapter.getSchema(["flyway_schema_history", "audit_log"], true);
+    const generator = new MermaidGenerator();
+    const diagram = generator.generate(schema);
+
+    expect(diagram).toContain('INDEX: idx_users_status');
+    expect(diagram).toContain('INDEX: idx_orders_user_id');
+    expect(diagram).toContain('UNIQUE INDEX: idx_payments_order_id');
+  });
+
+  test("Mermaid diagram should not contain indexes when showIndexes is false", async () => {
+    const schema = await adapter.getSchema(["flyway_schema_history", "audit_log"], false);
+    const generator = new MermaidGenerator();
+    const diagram = generator.generate(schema);
+
+    expect(diagram).not.toContain('INDEX:');
+    expect(diagram).not.toContain('UNIQUE INDEX:');
+  });
 });
