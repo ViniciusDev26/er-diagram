@@ -35,10 +35,10 @@ jobs:
           MYSQL_PASSWORD: mysql
           MYSQL_ROOT_PASSWORD: root
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -u root -proot"
+          --health-cmd="mysqladmin ping -h localhost"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     steps:
       - uses: actions/checkout@v4
@@ -52,15 +52,11 @@ jobs:
       - name: Wait for databases to be ready
         run: |
           echo "⏳ Waiting for PostgreSQL..."
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            sleep 2
-          done
+          timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U postgres; do sleep 2; done'
           echo "✅ PostgreSQL is ready"
 
           echo "⏳ Waiting for MySQL..."
-          until mysqladmin ping -h localhost -P 3306 -u root -proot --silent; do
-            sleep 2
-          done
+          timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -P 3306 --silent 2>/dev/null; do sleep 2; done'
           echo "✅ MySQL is ready"
 
       - name: Load PostgreSQL schema
@@ -71,7 +67,7 @@ jobs:
 
       - name: Load MySQL schema
         run: |
-          mysql -h localhost -P 3306 -u root -proot er-diagram < migrations/mysql/001_init.sql
+          MYSQL_PWD=root mysql -h localhost -P 3306 -u root er-diagram < migrations/mysql/001_init.sql
 
       - name: Run integration tests
         run: bun test
