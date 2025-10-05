@@ -1,4 +1,4 @@
-name: Test Action
+name: Integration Tests
 
 on:
   push:
@@ -9,17 +9,33 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16.9-alpine
         ports:
           - 5432:5432
         env:
-          POSTGRES_USER: postgres_user
-          POSTGRES_PASSWORD: postgres_pass
-          POSTGRES_DB: postgres_db
+          POSTGRES_DB: er-diagram
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         options: >-
-          --health-cmd="pg_isready -U postgres_user -d postgres_db"
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      mysql:
+        image: mysql:9.1.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_DATABASE: er-diagram
+          MYSQL_USER: mysql
+          MYSQL_PASSWORD: mysql
+          MYSQL_ROOT_PASSWORD: root
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -27,85 +43,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Wait for Postgres to be ready
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Wait for databases to be ready
         run: |
-          until pg_isready -h localhost -p 5432 -U postgres_user; do
-            echo "⏳ Waiting for database..."
+          echo "⏳ Waiting for PostgreSQL..."
+          until pg_isready -h localhost -p 5432 -U postgres; do
             sleep 2
           done
+          echo "✅ PostgreSQL is ready"
 
-      - name: Create example schema
+          echo "⏳ Waiting for MySQL..."
+          until mysqladmin ping -h localhost -P 3306 -u root -proot --silent; do
+            sleep 2
+          done
+          echo "✅ MySQL is ready"
+
+      - name: Load PostgreSQL schema
         env:
-          PGPASSWORD: postgres_pass
+          PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres_user -d postgres_db << 'EOF'
-          -- Create ENUM type
-          CREATE TYPE status_enum AS ENUM ('active', 'inactive', 'pending');
+          psql -h localhost -U postgres -d er-diagram -f migrations/postgres/001_init.sql
 
-          -- Create users table
-          CREATE TABLE users (
-            id SERIAL PRIMARY KEY,
-            email VARCHAR(255) UNIQUE NOT NULL,
-            status status_enum DEFAULT 'pending'
-          );
-
-          -- Create posts table with foreign key
-          CREATE TABLE posts (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            content TEXT,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-          );
-          EOF
-
-      - name: Test Action (Basic - .mmd only)
-        uses: ./
-        with:
-          pg-host: localhost
-          pg-user: postgres_user
-          pg-password: postgres_pass
-          pg-database: postgres_db
-          output-dir: ./docs
-
-      - name: Verify .mmd file was created
+      - name: Load MySQL schema
         run: |
-          if [ ! -f "./docs/database-er-diagram.mmd" ]; then
-            echo "❌ Error: .mmd file not found!"
-            exit 1
-          fi
-          echo "✅ .mmd file created successfully"
-          cat ./docs/database-er-diagram.mmd
+          mysql -h localhost -P 3306 -u root -proot er-diagram < migrations/mysql/001_init.sql
 
-      - name: Test Action (With README integration)
-        uses: ./
-        with:
-          pg-host: localhost
-          pg-user: postgres_user
-          pg-password: postgres_pass
-          pg-database: postgres_db
-          output-dir: ./docs
-          write-to-readme: true
-          readme-path: ./docs/README.md
-          excluded-tables: flyway_schema_history
+      - name: Run integration tests
+        run: bun test
 
-      - name: Verify README was updated
-        run: |
-          if [ ! -f "./docs/README.md" ]; then
-            echo "❌ Error: README not found!"
-            exit 1
-          fi
-          if ! grep -q "<!-- ER_DIAGRAM_START -->" "./docs/README.md"; then
-            echo "❌ Error: README missing diagram markers!"
-            exit 1
-          fi
-          echo "✅ README updated successfully"
-          cat ./docs/README.md
+      - name: Run PostgreSQL integration tests
+        run: bun run test:postgresql
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-diagrams
-          path: |
-            docs/database-er-diagram.mmd
-            docs/README.md
+      - name: Run MySQL integration tests
+        run: bun run test:mysql
