@@ -7,7 +7,7 @@ export const postgresConfig = {
 };
 
 export const mysqlConfig = {
-  host: process.env.TEST_MYSQL_HOST || "localhost",
+  host: process.env.TEST_MYSQL_HOST || "127.0.0.1",
   port: parseInt(process.env.TEST_MYSQL_PORT || "3306", 10),
   database: process.env.TEST_MYSQL_DB || "er-diagram",
   user: process.env.TEST_MYSQL_USER || "mysql",

@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  test-postgresql:
+    name: PostgreSQL Tests
     runs-on: ubuntu-latest
 
     services:
@@ -25,6 +26,35 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Wait for PostgreSQL
+        run: |
+          echo "⏳ Waiting for PostgreSQL..."
+          timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U postgres; do sleep 2; done'
+          echo "✅ PostgreSQL is ready"
+
+      - name: Load PostgreSQL schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d er-diagram -f migrations/postgres/001_init.sql
+
+      - name: Run PostgreSQL integration tests
+        run: bun run test:postgresql
+
+  test-mysql:
+    name: MySQL Tests
+    runs-on: ubuntu-latest
+
+    services:
       mysql:
         image: mysql:9.1.0
         ports:
@@ -49,31 +79,15 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Wait for databases to be ready
+      - name: Wait for MySQL
         run: |
-          echo "⏳ Waiting for PostgreSQL..."
-          timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U postgres; do sleep 2; done'
-          echo "✅ PostgreSQL is ready"
-
           echo "⏳ Waiting for MySQL..."
           timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -P 3306 --silent 2>/dev/null; do sleep 2; done'
           echo "✅ MySQL is ready"
 
-      - name: Load PostgreSQL schema
-        env:
-          PGPASSWORD: postgres
-        run: |
-          psql -h localhost -U postgres -d er-diagram -f migrations/postgres/001_init.sql
-
       - name: Load MySQL schema
         run: |
-          MYSQL_PWD=root mysql -h localhost -P 3306 -u root er-diagram < migrations/mysql/001_init.sql
-
-      - name: Run integration tests
-        run: bun test
-
-      - name: Run PostgreSQL integration tests
-        run: bun run test:postgresql
+          MYSQL_PWD=root mysql -h 127.0.0.1 -P 3306 -u root er-diagram < migrations/mysql/001_init.sql
 
       - name: Run MySQL integration tests
         run: bun run test:mysql
