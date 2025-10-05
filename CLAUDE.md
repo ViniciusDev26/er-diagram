@@ -14,16 +14,19 @@ This is a GitHub Action that generates Entity-Relationship (ER) diagrams in Merm
 # Install dependencies (first time only)
 bun install
 
-# PostgreSQL
-DB_TYPE=postgresql DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
+# Start test databases (optional)
+docker compose up -d
+
+# PostgreSQL (using docker-compose database)
+DB_TYPE=postgresql DB_HOST=localhost DB_PORT=5432 DB_NAME=er-diagram DB_USER=postgres DB_PASS=postgres \
   bun run generate-pg-diagram.ts
 
-# MySQL
-DB_TYPE=mysql DB_HOST=localhost DB_PORT=3306 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
+# MySQL (using docker-compose database)
+DB_TYPE=mysql DB_HOST=localhost DB_PORT=3306 DB_NAME=er-diagram DB_USER=mysql DB_PASS=mysql \
   bun run generate-pg-diagram.ts
 
 # Or using npm script
-DB_TYPE=postgresql DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
+DB_TYPE=postgresql DB_HOST=localhost DB_PORT=5432 DB_NAME=er-diagram DB_USER=postgres DB_PASS=postgres \
   bun run generate
 ```
 

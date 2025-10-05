@@ -196,7 +196,44 @@ EXCLUDED_TABLES="flyway_schema_history,temp_table" bun run generate
 ### Requirements
 
 - Bun >= 1.0
-- PostgreSQL database access
+- PostgreSQL or MySQL database access
+
+### Running Test Databases with Docker
+
+The project includes a `docker-compose.yml` file to easily spin up PostgreSQL and MySQL databases for testing:
+
+```bash
+# Start both databases
+docker compose up -d
+
+# Start only PostgreSQL
+docker compose up -d postgres
+
+# Start only MySQL
+docker compose up -d mysql
+
+# Stop all databases
+docker compose down
+
+# Stop and remove volumes (clean slate)
+docker compose down -v
+```
+
+**Connection Details:**
+
+PostgreSQL:
+- Host: `localhost`
+- Port: `5432`
+- Database: `er-diagram`
+- User: `postgres`
+- Password: `postgres`
+
+MySQL:
+- Host: `localhost`
+- Port: `3306`
+- Database: `er-diagram`
+- User: `mysql` (or `root`)
+- Password: `mysql` (or `root` for root user)
 
 ### Project Structure
 

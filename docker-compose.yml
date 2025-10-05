@@ -1,5 +1,5 @@
 services:
-  db:
+  postgres:
     image: postgres:16.9-alpine
     environment:
       POSTGRES_DB: er-diagram
@@ -8,10 +8,32 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./db-data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations/postgres:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  mysql:
+    image: mysql:9.1.0
+    environment:
+      MYSQL_DATABASE: er-diagram
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./migrations/mysql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  mysql-data:
