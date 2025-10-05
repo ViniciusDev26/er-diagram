@@ -1,0 +1,62 @@
+name: Update Example Diagram
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "migrations/**"
+      - "src/**"
+      - ".github/workflows/update-example.yml"
+  workflow_dispatch:
+
+jobs:
+  update-example:
+    name: Generate Example ER Diagram
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    services:
+      postgres:
+        image: postgres:16.9-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: er-diagram
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Wait for PostgreSQL
+        run: |
+          echo "⏳ Waiting for PostgreSQL..."
+          timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U postgres; do sleep 2; done'
+          echo "✅ PostgreSQL is ready"
+
+      - name: Load PostgreSQL schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d er-diagram -f migrations/postgres/001_init.sql
+
+      - name: Generate ER Diagram
+        uses: ./
+        with:
+          db-type: postgresql
+          db-host: localhost
+          db-port: 5432
+          db-name: er-diagram
+          db-user: postgres
+          db-pass: postgres
+          output-dir: example
+          show-indexes: true
+          auto-commit: true
+          commit-message: "docs: update example ER diagram [skip ci]"
