@@ -175,12 +175,25 @@ erDiagram
 
 ### Indexes
 
-When `show-indexes` is enabled (default: `true`), the diagram will include database indexes:
+When `show-indexes` is enabled (default: `true`), the diagram will include database indexes as pseudo-columns:
 
-- `INDEX: index_name (column1, column2)` - Regular index
-- `UNIQUE INDEX: index_name (column)` - Unique index
+- `INDEX_indexname_columns` - Regular index
+- `UNIQUE-INDEX_indexname_columns` - Unique index
 
-**Note:** Primary key indexes are automatically excluded as they're already indicated by `PK`.
+**Example:**
+```
+users {
+    id integer PK
+    email varchar(255) UK
+    string INDEX_idx_users_email_email
+    string UNIQUE-INDEX_users_email_key_email
+}
+```
+
+**Note:**
+- Primary key indexes are automatically excluded as they're already indicated by `PK`
+- Indexes are shown as `string` type columns for Mermaid compatibility
+- Column names in the index are joined with underscores
 
 ### Relationship Types
 

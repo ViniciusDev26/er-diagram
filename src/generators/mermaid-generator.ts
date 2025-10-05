@@ -52,13 +52,13 @@ export class MermaidGenerator {
         result += `        ${column.name} ${cleanType}${keyIndicator}\n`;
       }
 
-      // Add indexes if available
+      // Add indexes as comments (Mermaid ER doesn't support index notation)
       if (table.indexes && table.indexes.length > 0) {
-        result += "\n";
         for (const index of table.indexes) {
-          const indexType = index.isUnique ? "UNIQUE INDEX" : "INDEX";
-          const columns = index.columns.join(", ");
-          result += `        string "${indexType}: ${index.name} (${columns})"\n`;
+          const indexType = index.isUnique ? "UNIQUE-INDEX" : "INDEX";
+          const columns = index.columns.join("_");
+          // Use a pseudo-column with descriptive name
+          result += `        string ${indexType}_${index.name}_${columns}\n`;
         }
       }
 

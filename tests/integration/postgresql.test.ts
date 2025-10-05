@@ -251,9 +251,9 @@ describe("PostgreSQL Integration Tests", () => {
     const generator = new MermaidGenerator();
     const diagram = generator.generate(schema);
 
-    expect(diagram).toContain('INDEX: idx_users_status');
-    expect(diagram).toContain('INDEX: idx_orders_user_id');
-    expect(diagram).toContain('UNIQUE INDEX: idx_payments_order_id');
+    expect(diagram).toContain('INDEX_idx_users_status');
+    expect(diagram).toContain('INDEX_idx_orders_user_id');
+    expect(diagram).toContain('UNIQUE-INDEX_idx_payments_order_id');
   });
 
   test("Mermaid diagram should not contain indexes when showIndexes is false", async () => {
@@ -261,7 +261,7 @@ describe("PostgreSQL Integration Tests", () => {
     const generator = new MermaidGenerator();
     const diagram = generator.generate(schema);
 
-    expect(diagram).not.toContain('INDEX:');
-    expect(diagram).not.toContain('UNIQUE INDEX:');
+    expect(diagram).not.toContain('INDEX_idx_');
+    expect(diagram).not.toContain('UNIQUE-INDEX_');
   });
 });
