@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 import { $ } from "bun";
-import { writeArrayToSqlArray } from "./writers/array-to-sql-array";
 import { env } from "./env";
 import { makeSqlConnection } from "./config/sql-connection";
 
@@ -53,7 +52,7 @@ async function main() {
     const tables = await sql<{ tablename: string }[]>`
       SELECT tablename
       FROM pg_tables
-      WHERE schemaname = 'public' AND tablename not in ${writeArrayToSqlArray(EXCLUDED_TABLES)}
+      WHERE schemaname = 'public' AND tablename NOT IN ${sql(EXCLUDED_TABLES)}
       ORDER BY tablename;
     `;
 
@@ -167,7 +166,7 @@ async function main() {
         ON rc.constraint_name = tc.constraint_name
       WHERE tc.constraint_type = 'FOREIGN KEY'
         AND tc.table_schema = 'public'
-        AND tc.table_name NOT IN ${writeArrayToSqlArray(EXCLUDED_TABLES)}
+        AND tc.table_name NOT IN ${sql(EXCLUDED_TABLES)}
       ORDER BY tc.table_name;
     `;
 

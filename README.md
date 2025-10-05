@@ -47,18 +47,19 @@ jobs:
 bun install
 
 # Run the generator
-PGHOST=localhost \
-PGPORT=5432 \
-PGDATABASE=mydb \
-PGUSER=postgres \
-PGPASSWORD=secret \
+DB_HOST=localhost \
+DB_PORT=5432 \
+DB_NAME=mydb \
+DB_USER=postgres \
+DB_PASS=secret \
 bun run generate
 
 # With README integration
-PGHOST=localhost \
-PGDATABASE=mydb \
-PGUSER=postgres \
-PGPASSWORD=secret \
+DB_HOST=localhost \
+DB_PORT=5432 \
+DB_NAME=mydb \
+DB_USER=postgres \
+DB_PASS=secret \
 WRITE_TO_README=true \
 README_PATH=docs/README.md \
 bun run generate-pg-diagram.ts
