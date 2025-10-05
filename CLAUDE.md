@@ -44,6 +44,40 @@ The action expects these environment variables:
 - `README_PATH` - Path to the README file (default: README.md)
 - `EXCLUDED_TABLES` - Comma-separated list of table names to exclude (default: flyway_schema_history)
 
+### Running Integration Tests
+
+The project uses Bun's built-in test runner for integration tests:
+
+```bash
+# Start test databases
+docker compose up -d
+
+# Run all integration tests
+bun test
+
+# Run specific database tests
+bun run test:postgresql
+bun run test:mysql
+
+# Run tests in watch mode
+bun run test:watch
+```
+
+**Test Structure:**
+- `tests/integration/postgresql.test.ts` - PostgreSQL adapter tests
+- `tests/integration/mysql.test.ts` - MySQL adapter tests
+- `tests/helpers/assertions.ts` - Reusable test assertions
+- `tests/helpers/test-config.ts` - Test database configurations
+
+**What is Tested:**
+- Database connection and schema extraction
+- ENUM type extraction (native types vs column ENUMs)
+- Table, column, and constraint detection
+- Primary keys, foreign keys, and unique keys
+- Relationship mapping with CASCADE detection
+- Mermaid diagram generation and validation
+- Proper handling of excluded tables
+
 ## Architecture
 
 The project follows a modular architecture with clear separation of concerns, designed to be extensible for multiple database systems in the future.

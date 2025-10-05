@@ -235,15 +235,54 @@ MySQL:
 - User: `mysql` (or `root`)
 - Password: `mysql` (or `root` for root user)
 
+### Running Tests
+
+The project includes comprehensive integration tests for both PostgreSQL and MySQL:
+
+```bash
+# Make sure databases are running
+docker compose up -d
+
+# Run all tests
+bun test
+
+# Run only PostgreSQL tests
+bun run test:postgresql
+
+# Run only MySQL tests
+bun run test:mysql
+
+# Run tests in watch mode
+bun run test:watch
+```
+
+**Test Coverage:**
+- Schema extraction from both databases
+- ENUM type handling (PostgreSQL native types vs MySQL column ENUMs)
+- Primary key, foreign key, and unique key detection
+- Relationship mapping (CASCADE vs non-CASCADE)
+- Mermaid diagram generation and validation
+- Table and column type verification
+
 ### Project Structure
 
 ```
 .
-├── generate-pg-diagram.ts   # Main TypeScript script
-├── action.yml               # GitHub Action definition
-├── package.json             # Dependencies
-├── CLAUDE.md               # AI assistant guidance
-└── README.md               # This file
+├── src/
+│   ├── adapters/           # Database adapters
+│   ├── generators/         # Diagram generators
+│   ├── writers/            # Output writers
+│   └── types/              # TypeScript types
+├── tests/
+│   ├── integration/        # Integration tests
+│   └── helpers/            # Test utilities
+├── migrations/
+│   ├── postgres/           # PostgreSQL migrations
+│   └── mysql/              # MySQL migrations
+├── action.yml              # GitHub Action definition
+├── package.json            # Dependencies
+├── CLAUDE.md              # AI assistant guidance
+└── README.md              # This file
 ```
 
 ### How It Works
