@@ -1,0 +1,99 @@
+erDiagram
+
+    "order_status (ENUM)" {
+        pending string
+        processing string
+        shipped string
+        delivered string
+        cancelled string
+    }
+
+    "payment_method (ENUM)" {
+        credit_card string
+        debit_card string
+        pix string
+        boleto string
+    }
+
+    "user_status (ENUM)" {
+        active string
+        inactive string
+        suspended string
+    }
+
+    addresses {
+        id integer PK
+        user_id integer FK
+        street varchar(255)
+        city varchar(100)
+        state varchar(2)
+        zip_code varchar(10)
+        is_default boolean
+        created_at timestamp_without_time_zone
+    }
+
+    order_items {
+        id integer PK
+        order_id integer FK
+        product_id integer FK
+        quantity integer
+        unit_price numeric(10_2)
+    }
+
+    orders {
+        id integer PK
+        user_id integer FK
+        status order_status
+        total_amount numeric(10_2)
+        created_at timestamp_without_time_zone
+        updated_at timestamp_without_time_zone
+    }
+
+    payments {
+        id integer PK
+        order_id integer FK
+        payment_method payment_method
+        amount numeric(10_2)
+        paid_at timestamp_without_time_zone
+        created_at timestamp_without_time_zone
+    }
+
+    products {
+        id integer PK
+        name varchar(255)
+        description text
+        price numeric(10_2)
+        stock integer
+        created_at timestamp_without_time_zone
+        updated_at timestamp_without_time_zone
+    }
+
+    reviews {
+        id integer PK
+        product_id integer FK
+        user_id integer FK
+        rating integer
+        comment text
+        created_at timestamp_without_time_zone
+    }
+
+    users {
+        id integer PK
+        email varchar(255) UK
+        name varchar(255)
+        status user_status
+        created_at timestamp_without_time_zone
+        updated_at timestamp_without_time_zone
+    }
+
+    users ||--o{ addresses : "has"
+    orders ||--o{ order_items : "has"
+    products ||..o{ order_items : "references"
+    users ||--o{ orders : "has"
+    orders ||--o{ payments : "has"
+    products ||--o{ reviews : "has"
+    users ||--o{ reviews : "has"
+
+    orders }o--|| "order_status (ENUM)" : "uses"
+    payments }o--|| "payment_method (ENUM)" : "uses"
+    users }o--|| "user_status (ENUM)" : "uses"
