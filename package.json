@@ -1,0 +1,14 @@
+{
+  "name": "generate-pg-diagram",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "generate": "bun run src/generate-pg-diagram.ts"
+  },
+  "dependencies": {
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
