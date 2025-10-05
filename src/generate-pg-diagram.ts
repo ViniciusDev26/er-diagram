@@ -1,39 +1,27 @@
 #!/usr/bin/env bun
-import postgres from "postgres";
 import { $ } from "bun";
+import { writeArrayToSqlArray } from "./writers/array-to-sql-array";
+import { env } from "./env";
+import { makeSqlConnection } from "./config/sql-connection";
 
 // Database connection details from environment variables
-const DB_HOST = process.env.PGHOST || "localhost";
-const DB_PORT = parseInt(process.env.PGPORT || "5432");
-const DB_NAME = process.env.PGDATABASE;
-const DB_USER = process.env.PGUSER;
-const DB_PASS = process.env.PGPASSWORD;
-
-// Output configuration from environment variables
-const OUTPUT_DIR = "docs";
+const EXCLUDED_TABLES = env.EXCLUDED_TABLES;
+const OUTPUT_DIR = env.OUTPUT_DIR;
 const MERMAID_FILE = `${OUTPUT_DIR}/database-er-diagram.mmd`;
-const WRITE_TO_README = process.env.WRITE_TO_README === "true";
-const README_PATH = process.env.README_PATH || "README.md";
+const WRITE_TO_README = env.WRITE_TO_README;
+const README_PATH = env.README_PATH;
 
 // Create PostgreSQL connection
-const sql = postgres({
-  host: DB_HOST,
-  port: DB_PORT,
-  database: DB_NAME,
-  username: DB_USER,
-  password: DB_PASS,
-});
+const sql = makeSqlConnection();
 
 async function main() {
   try {
-    // Create docs directory if it doesn't exist
     await $`mkdir -p ${OUTPUT_DIR}`;
 
     console.log("🎨 Generating Mermaid ER diagram...");
 
     let diagram = "erDiagram\n";
 
-    // Get all ENUMs first and add them as entities
     const enums = await sql<{ enum_name: string }[]>`
       SELECT t.typname AS enum_name
       FROM pg_type t
@@ -46,7 +34,6 @@ async function main() {
       for (const { enum_name } of enums) {
         diagram += `\n    "${enum_name} (ENUM)" {\n`;
 
-        // Get ENUM values
         const enumValues = await sql<{ enumlabel: string }[]>`
           SELECT e.enumlabel
           FROM pg_enum e
@@ -63,15 +50,13 @@ async function main() {
       }
     }
 
-    // Get all tables (excluding Flyway history)
     const tables = await sql<{ tablename: string }[]>`
       SELECT tablename
       FROM pg_tables
-      WHERE schemaname = 'public' AND tablename != 'flyway_schema_history'
+      WHERE schemaname = 'public' AND tablename not in ${writeArrayToSqlArray(EXCLUDED_TABLES)}
       ORDER BY tablename;
     `;
 
-    // Generate table definitions
     for (const { tablename: table } of tables) {
       diagram += `\n    ${table} {\n`;
 

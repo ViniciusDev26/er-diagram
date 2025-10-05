@@ -35,8 +35,10 @@ jobs:
           done
 
       - name: Create example schema
+        env:
+          PGPASSWORD: postgres_pass
         run: |
-          PGPASSWORD=postgres_pass psql -h localhost -U postgres_user -d postgres_db << 'EOF'
+          psql -h localhost -U postgres_user -d postgres_db << 'EOF'
           -- Create ENUM type
           CREATE TYPE status_enum AS ENUM ('active', 'inactive', 'pending');
 
@@ -85,6 +87,7 @@ jobs:
           output-dir: ./docs
           write-to-readme: true
           readme-path: ./docs/README.md
+          excluded-tables: flyway_schema_history
 
       - name: Verify README was updated
         run: |

@@ -35,6 +35,10 @@ inputs:
     description: "Path to the README file"
     required: false
     default: "README.md"
+  excluded-tables:
+    description: "Comma-separated list of table names to exclude from the diagram"
+    required: false
+    default: "flyway_schema_history"
 
 runs:
   using: "composite"
@@ -49,12 +53,14 @@ runs:
 
     - name: Generate ER diagram
       env:
-        PGHOST: ${{ inputs.pg-host }}
-        PGPORT: ${{ inputs.pg-port }}
-        PGDATABASE: ${{ inputs.pg-database }}
-        PGUSER: ${{ inputs.pg-user }}
-        PGPASSWORD: ${{ inputs.pg-password }}
+        DB_HOST: ${{ inputs.pg-host }}
+        DB_PORT: ${{ inputs.pg-port }}
+        DB_NAME: ${{ inputs.pg-database }}
+        DB_USER: ${{ inputs.pg-user }}
+        DB_PASS: ${{ inputs.pg-password }}
+        OUTPUT_DIR: ${{ inputs.output-dir }}
         WRITE_TO_README: ${{ inputs.write-to-readme }}
         README_PATH: ${{ inputs.readme-path }}
+        EXCLUDED_TABLES: ${{ inputs.excluded-tables }}
       run: bun run $GITHUB_ACTION_PATH/src/generate-pg-diagram.ts
       shell: bash

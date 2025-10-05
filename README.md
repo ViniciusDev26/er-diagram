@@ -73,9 +73,10 @@ bun run generate-pg-diagram.ts
 | `pg-database` | Database name | Yes | - |
 | `pg-user` | Database user | Yes | - |
 | `pg-password` | Database password | Yes | - |
+| `output-dir` | Output directory for .mmd file | No | `docs` |
 | `write-to-readme` | Write diagram to README | No | `false` |
 | `readme-path` | Path to README file | No | `README.md` |
-| `output-dir` | Output directory for .mmd file | No | `docs` |
+| `excluded-tables` | Comma-separated list of tables to exclude | No | `flyway_schema_history` |
 
 ## Output
 
@@ -131,7 +132,21 @@ erDiagram
 
 ### Excluded Tables
 
-- `flyway_schema_history` - Automatically excluded from diagram
+By default, `flyway_schema_history` is excluded from the diagram. You can customize this via the `excluded-tables` input:
+
+```yaml
+- name: Generate ER Diagram
+  uses: ViniciusDev26/er-diagram@main
+  with:
+    # ... other inputs
+    excluded-tables: "flyway_schema_history,temp_table,audit_log"
+```
+
+Or via environment variable:
+
+```bash
+EXCLUDED_TABLES="flyway_schema_history,temp_table" bun run generate
+```
 
 ## Development
 
