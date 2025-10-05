@@ -6,21 +6,21 @@ branding:
   color: "blue"
 
 inputs:
-  pg-host:
+  db-host:
     description: "Host of PostgreSQL"
     required: false
     default: "localhost"
-  pg-port:
+  db-port:
     description: "Port of PostgreSQL"
     required: false
     default: "5432"
-  pg-database:
+  db-name:
     description: "Name of the database"
     required: true
-  pg-user:
+  db-user:
     description: "User of the database"
     required: true
-  pg-password:
+  db-pass:
     description: "Password of the database"
     required: true
   output-dir:
@@ -53,11 +53,11 @@ runs:
 
     - name: Generate ER diagram
       env:
-        DB_HOST: ${{ inputs.pg-host }}
-        DB_PORT: ${{ inputs.pg-port }}
-        DB_NAME: ${{ inputs.pg-database }}
-        DB_USER: ${{ inputs.pg-user }}
-        DB_PASS: ${{ inputs.pg-password }}
+        DB_HOST: ${{ inputs.db-host }}
+        DB_PORT: ${{ inputs.db-port }}
+        DB_NAME: ${{ inputs.db-name }}
+        DB_USER: ${{ inputs.db-user }}
+        DB_PASS: ${{ inputs.db-pass }}
         OUTPUT_DIR: ${{ inputs.output-dir }}
         WRITE_TO_README: ${{ inputs.write-to-readme }}
         README_PATH: ${{ inputs.readme-path }}

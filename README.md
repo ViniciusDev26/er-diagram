@@ -31,11 +31,11 @@ jobs:
       - name: Generate ER Diagram
         uses: ViniciusDev26/er-diagram@main
         with:
-          pg-host: localhost
-          pg-port: 5432
-          pg-database: mydb
-          pg-user: postgres
-          pg-password: ${{ secrets.DB_PASSWORD }}
+          db-host: localhost
+          db-port: 5432
+          db-name: mydb
+          db-user: postgres
+          db-pass: ${{ secrets.DB_PASSWORD }}
           write-to-readme: true
           readme-path: docs/README.md
 ```
@@ -69,15 +69,15 @@ bun run generate-pg-diagram.ts
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `pg-host` | PostgreSQL host | No | `localhost` |
-| `pg-port` | PostgreSQL port | No | `5432` |
-| `pg-database` | Database name | Yes | - |
-| `pg-user` | Database user | Yes | - |
-| `pg-password` | Database password | Yes | - |
-| `output-dir` | Output directory for .mmd file | No | `docs` |
-| `write-to-readme` | Write diagram to README | No | `false` |
-| `readme-path` | Path to README file | No | `README.md` |
-| `excluded-tables` | Comma-separated list of tables to exclude | No | `flyway_schema_history` |
+| `db-host` | Host of PostgreSQL | No | `localhost` |
+| `db-port` | Port of PostgreSQL | No | `5432` |
+| `db-name` | Name of the database | Yes | - |
+| `db-user` | User of the database | Yes | - |
+| `db-pass` | Password of the database | Yes | - |
+| `output-dir` | Directory where the diagram will be saved | No | `docs` |
+| `write-to-readme` | Whether to write the diagram to the README file | No | `false` |
+| `readme-path` | Path to the README file | No | `README.md` |
+| `excluded-tables` | Comma-separated list of table names to exclude from the diagram | No | `flyway_schema_history` |
 
 ## Output
 

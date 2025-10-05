@@ -15,22 +15,26 @@ This is a GitHub Action that generates Entity-Relationship (ER) diagrams in Merm
 bun install
 
 # Run the script with database connection parameters
-PGHOST=localhost PGPORT=5432 PGDATABASE=your_db PGUSER=your_user PGPASSWORD=your_pass \
+DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
   bun run generate-pg-diagram.ts
 
 # Or using npm script
-PGHOST=localhost PGPORT=5432 PGDATABASE=your_db PGUSER=your_user PGPASSWORD=your_pass \
+DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
   bun run generate
 ```
 
 ### Testing the Action Locally
 
 The action expects these environment variables:
-- `PGHOST` - PostgreSQL host (default: localhost)
-- `PGPORT` - PostgreSQL port (default: 5432)
-- `PGDATABASE` - Database name (required)
-- `PGUSER` - Database user (required)
-- `PGPASSWORD` - Database password (required)
+- `DB_HOST` - PostgreSQL host (default: localhost)
+- `DB_PORT` - PostgreSQL port (default: 5432)
+- `DB_NAME` - Database name (required)
+- `DB_USER` - Database user (required)
+- `DB_PASS` - Database password (required)
+- `OUTPUT_DIR` - Directory where the diagram will be saved (default: docs)
+- `WRITE_TO_README` - Whether to write the diagram to the README file (default: false)
+- `README_PATH` - Path to the README file (default: README.md)
+- `EXCLUDED_TABLES` - Comma-separated list of table names to exclude (default: flyway_schema_history)
 
 ## Architecture
 
@@ -61,7 +65,18 @@ The TypeScript script using Bun performs the following operations in sequence:
 
 ### GitHub Action Interface
 
-The `action.yml` defines inputs for database connection parameters and uses Bun to execute the TypeScript script. The action:
+The `action.yml` defines inputs for database connection parameters and uses Bun to execute the TypeScript script. The action inputs use kebab-case and are mapped to environment variables:
+- `db-host` → `DB_HOST`
+- `db-port` → `DB_PORT`
+- `db-name` → `DB_NAME`
+- `db-user` → `DB_USER`
+- `db-pass` → `DB_PASS`
+- `output-dir` → `OUTPUT_DIR`
+- `write-to-readme` → `WRITE_TO_README`
+- `readme-path` → `README_PATH`
+- `excluded-tables` → `EXCLUDED_TABLES`
+
+The action workflow:
 1. Sets up Bun runtime using `oven-sh/setup-bun@v2`
 2. Installs dependencies with `bun install`
 3. Runs the diagram generator with `bun run generate-pg-diagram.ts`
@@ -70,7 +85,8 @@ The `action.yml` defines inputs for database connection parameters and uses Bun 
 
 - Uses `postgres` library for type-safe database queries
 - All queries target the `public` schema only
-- The `flyway_schema_history` table is explicitly excluded from the diagram
+- Environment variables are validated using Zod schema in `src/env.ts`
+- The `flyway_schema_history` table is excluded by default (configurable via `EXCLUDED_TABLES`)
 - Relationship cardinality in Mermaid is determined by the DELETE rule: CASCADE = identifying, others = non-identifying
 - Bun Shell (`$`) is used for directory creation (`mkdir -p`)
-- The script exports only the `.mmd` file (no README integration)
+- The script can optionally integrate the diagram into README files between markers
