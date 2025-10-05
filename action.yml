@@ -6,12 +6,16 @@ branding:
   color: "blue"
 
 inputs:
+  db-type:
+    description: "Type of database (postgresql or mysql)"
+    required: false
+    default: "postgresql"
   db-host:
-    description: "Host of PostgreSQL"
+    description: "Host of the database"
     required: false
     default: "localhost"
   db-port:
-    description: "Port of PostgreSQL"
+    description: "Port of the database"
     required: false
     default: "5432"
   db-name:
@@ -53,6 +57,7 @@ runs:
 
     - name: Generate ER diagram
       env:
+        DB_TYPE: ${{ inputs.db-type }}
         DB_HOST: ${{ inputs.db-host }}
         DB_PORT: ${{ inputs.db-port }}
         DB_NAME: ${{ inputs.db-name }}

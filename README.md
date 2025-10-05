@@ -1,10 +1,11 @@
-# PostgreSQL ER Diagram Generator
+# Database ER Diagram Generator
 
-A GitHub Action that generates Entity-Relationship (ER) diagrams in Mermaid format from PostgreSQL databases. Built with TypeScript and Bun for fast execution.
+A GitHub Action that generates Entity-Relationship (ER) diagrams in Mermaid format from PostgreSQL and MySQL databases. Built with TypeScript and Bun for fast execution.
 
 ## Features
 
-- 🎨 Generates Mermaid ER diagrams from PostgreSQL schema
+- 🎨 Generates Mermaid ER diagrams from database schemas
+- 🗄️ Supports **PostgreSQL** and **MySQL** databases
 - 🔄 Supports ENUM types as pseudo-entities
 - 🔑 Identifies Primary Keys (PK), Foreign Keys (FK), and Unique Keys (UK)
 - 📊 Shows relationship cardinality (CASCADE vs non-CASCADE)
@@ -15,6 +16,7 @@ A GitHub Action that generates Entity-Relationship (ER) diagrams in Mermaid form
 
 ### As a GitHub Action
 
+**PostgreSQL Example:**
 ```yaml
 name: Generate ER Diagram
 
@@ -31,10 +33,38 @@ jobs:
       - name: Generate ER Diagram
         uses: ViniciusDev26/er-diagram@main
         with:
+          db-type: postgresql
           db-host: localhost
           db-port: 5432
           db-name: mydb
           db-user: postgres
+          db-pass: ${{ secrets.DB_PASSWORD }}
+          write-to-readme: true
+          readme-path: docs/README.md
+```
+
+**MySQL Example:**
+```yaml
+name: Generate ER Diagram
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  generate-diagram:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate ER Diagram
+        uses: ViniciusDev26/er-diagram@main
+        with:
+          db-type: mysql
+          db-host: localhost
+          db-port: 3306
+          db-name: mydb
+          db-user: root
           db-pass: ${{ secrets.DB_PASSWORD }}
           write-to-readme: true
           readme-path: docs/README.md
@@ -46,7 +76,8 @@ jobs:
 # Install dependencies
 bun install
 
-# Run the generator
+# PostgreSQL
+DB_TYPE=postgresql \
 DB_HOST=localhost \
 DB_PORT=5432 \
 DB_NAME=mydb \
@@ -54,7 +85,17 @@ DB_USER=postgres \
 DB_PASS=secret \
 bun run generate
 
+# MySQL
+DB_TYPE=mysql \
+DB_HOST=localhost \
+DB_PORT=3306 \
+DB_NAME=mydb \
+DB_USER=root \
+DB_PASS=secret \
+bun run generate
+
 # With README integration
+DB_TYPE=postgresql \
 DB_HOST=localhost \
 DB_PORT=5432 \
 DB_NAME=mydb \
@@ -69,8 +110,9 @@ bun run generate-pg-diagram.ts
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `db-host` | Host of PostgreSQL | No | `localhost` |
-| `db-port` | Port of PostgreSQL | No | `5432` |
+| `db-type` | Type of database (`postgresql` or `mysql`) | No | `postgresql` |
+| `db-host` | Host of the database | No | `localhost` |
+| `db-port` | Port of the database | No | `5432` |
 | `db-name` | Name of the database | Yes | - |
 | `db-user` | User of the database | Yes | - |
 | `db-pass` | Password of the database | Yes | - |

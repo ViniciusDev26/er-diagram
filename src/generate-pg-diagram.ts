@@ -2,8 +2,10 @@
 import { $ } from "bun";
 import { env } from "./env";
 import { PostgreSQLAdapter } from "./adapters/postgresql-adapter";
+import { MySQLAdapter } from "./adapters/mysql-adapter";
 import { MermaidGenerator } from "./generators/mermaid-generator";
 import { ReadmeWriter } from "./writers/readme-writer";
+import type { DatabaseAdapter } from "./types/database-adapter";
 
 // Configuration from environment variables
 const EXCLUDED_TABLES = env.EXCLUDED_TABLES;
@@ -12,19 +14,34 @@ const MERMAID_FILE = `${OUTPUT_DIR}/database-er-diagram.mmd`;
 const WRITE_TO_README = env.WRITE_TO_README;
 const README_PATH = env.README_PATH;
 
+function createAdapter(): DatabaseAdapter {
+  const adapters: Record<typeof env.DB_TYPE, DatabaseAdapter> = {
+    postgresql: new PostgreSQLAdapter({
+      host: env.DB_HOST,
+      port: env.DB_PORT,
+      database: env.DB_NAME,
+      username: env.DB_USER,
+      password: env.DB_PASS,
+    }),
+    mysql: new MySQLAdapter({
+      host: env.DB_HOST,
+      port: env.DB_PORT,
+      database: env.DB_NAME,
+      user: env.DB_USER,
+      password: env.DB_PASS,
+    }),
+  };
+
+  return adapters[env.DB_TYPE];
+}
+
 async function main() {
-  const adapter = new PostgreSQLAdapter({
-    host: env.DB_HOST,
-    port: env.DB_PORT,
-    database: env.DB_NAME,
-    username: env.DB_USER,
-    password: env.DB_PASS,
-  });
+  const adapter = createAdapter();
 
   try {
     await $`mkdir -p ${OUTPUT_DIR}`;
 
-    console.log("🎨 Generating Mermaid ER diagram...");
+    console.log(`🎨 Generating Mermaid ER diagram for ${env.DB_TYPE}...`);
 
     // Connect to database
     await adapter.connect();

@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 const EnvSchema = z.object({
+  DB_TYPE: z.enum(["postgresql", "mysql"]).optional().default("postgresql"),
   DB_HOST: z.string().optional().default("localhost"),
   DB_PORT: z.string().optional().default("5432").transform((val) => parseInt(val, 10)),
   DB_NAME: z.string(),

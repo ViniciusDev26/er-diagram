@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a GitHub Action that generates Entity-Relationship (ER) diagrams in Mermaid format from PostgreSQL databases. It extracts database schema metadata including tables, columns, foreign keys, and ENUM types, then creates a visual diagram that can be embedded in documentation.
+This is a GitHub Action that generates Entity-Relationship (ER) diagrams in Mermaid format from PostgreSQL and MySQL databases. It extracts database schema metadata including tables, columns, foreign keys, and ENUM types, then creates a visual diagram that can be embedded in documentation.
 
 ## Key Commands
 
@@ -14,20 +14,25 @@ This is a GitHub Action that generates Entity-Relationship (ER) diagrams in Merm
 # Install dependencies (first time only)
 bun install
 
-# Run the script with database connection parameters
-DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
+# PostgreSQL
+DB_TYPE=postgresql DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
+  bun run generate-pg-diagram.ts
+
+# MySQL
+DB_TYPE=mysql DB_HOST=localhost DB_PORT=3306 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
   bun run generate-pg-diagram.ts
 
 # Or using npm script
-DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
+DB_TYPE=postgresql DB_HOST=localhost DB_PORT=5432 DB_NAME=your_db DB_USER=your_user DB_PASS=your_pass \
   bun run generate
 ```
 
 ### Testing the Action Locally
 
 The action expects these environment variables:
-- `DB_HOST` - PostgreSQL host (default: localhost)
-- `DB_PORT` - PostgreSQL port (default: 5432)
+- `DB_TYPE` - Database type: `postgresql` or `mysql` (default: postgresql)
+- `DB_HOST` - Database host (default: localhost)
+- `DB_PORT` - Database port (default: 5432)
 - `DB_NAME` - Database name (required)
 - `DB_USER` - Database user (required)
 - `DB_PASS` - Database password (required)
@@ -47,7 +52,8 @@ src/
 ├── types/
 │   └── database-adapter.ts      # Database adapter interface and type definitions
 ├── adapters/
-│   └── postgresql-adapter.ts    # PostgreSQL-specific implementation
+│   ├── postgresql-adapter.ts    # PostgreSQL-specific implementation
+│   └── mysql-adapter.ts         # MySQL-specific implementation
 ├── generators/
 │   └── mermaid-generator.ts     # Mermaid diagram generation logic
 ├── writers/
@@ -97,10 +103,22 @@ Handles README file integration:
 - Updates existing README with diagram markers (`<!-- ER_DIAGRAM_START -->` / `<!-- ER_DIAGRAM_END -->`)
 - Appends diagram if markers don't exist
 
-#### 5. Main Script (`generate-pg-diagram.ts`)
+#### 5. MySQL Adapter (`adapters/mysql-adapter.ts`)
+
+Implements `DatabaseAdapter` for MySQL:
+- **Connection Management**: Handles MySQL connection using `mysql2/promise` library
+- **Configuration**: Accepts `MySQLConfig` with host, port, database, user, and password
+- **ENUM Extraction**: Extracts ENUM column definitions (MySQL ENUMs are column-specific, not standalone types)
+- **Table Discovery**: Retrieves all tables from the specified database (excluding specified tables)
+- **Column Metadata**: Queries `INFORMATION_SCHEMA.COLUMNS` with proper data type formatting (varchar, decimal, enum, etc.)
+- **Constraint Detection**: Determines primary keys, foreign keys, and unique keys via `INFORMATION_SCHEMA`
+- **Relationship Mapping**: Extracts foreign key relationships with CASCADE detection
+- **ENUM Relationships**: Identifies connections between tables and ENUM columns
+
+#### 6. Main Script (`generate-pg-diagram.ts`)
 
 Orchestrates the entire process:
-1. Creates adapter instance with connection configuration from environment variables
+1. Creates adapter instance based on `DB_TYPE` environment variable using a Record-based factory
 2. Connects to database via adapter
 3. Retrieves normalized schema via adapter
 4. Generates Mermaid diagram from schema
@@ -116,6 +134,7 @@ Orchestrates the entire process:
 ### GitHub Action Interface
 
 The `action.yml` defines inputs for database connection parameters and uses Bun to execute the TypeScript script. The action inputs use kebab-case and are mapped to environment variables:
+- `db-type` → `DB_TYPE` (postgresql or mysql)
 - `db-host` → `DB_HOST`
 - `db-port` → `DB_PORT`
 - `db-name` → `DB_NAME`
@@ -128,13 +147,16 @@ The `action.yml` defines inputs for database connection parameters and uses Bun 
 
 The action workflow:
 1. Sets up Bun runtime using `oven-sh/setup-bun@v2`
-2. Installs dependencies with `bun install`
+2. Installs dependencies with `bun install` (includes both `postgres` and `mysql2`)
 3. Runs the diagram generator with `bun run generate-pg-diagram.ts`
 
 ## Important Details
 
-- Uses `postgres` library for type-safe database queries
-- All PostgreSQL queries target the `public` schema only
+- **PostgreSQL**: Uses `postgres` library for type-safe database queries, targets the `public` schema only
+- **MySQL**: Uses `mysql2/promise` library, queries `INFORMATION_SCHEMA` for metadata
+- **ENUM Handling**:
+  - PostgreSQL: ENUMs are standalone types in `pg_type`
+  - MySQL: ENUMs are column-specific definitions extracted from `COLUMN_TYPE`
 - Environment variables are validated using Zod schema in `src/env.ts`
 - The `flyway_schema_history` table is excluded by default (configurable via `EXCLUDED_TABLES`)
 - Relationship cardinality in Mermaid is determined by the DELETE rule: CASCADE = identifying, others = non-identifying
@@ -143,21 +165,36 @@ The action workflow:
 
 ## Extending to Other Databases
 
-To add support for another database system (e.g., MySQL, SQL Server):
+To add support for another database system (e.g., SQL Server, Oracle):
 
-1. **Create a new adapter** in `src/adapters/` that implements the `DatabaseAdapter` interface
-   - Define a configuration interface (e.g., `MySQLConfig`) with necessary connection parameters
+1. **Install the database client library**:
+   ```bash
+   bun add <database-client-library>
+   ```
+
+2. **Create a new adapter** in `src/adapters/` that implements the `DatabaseAdapter` interface
+   - Define a configuration interface (e.g., `SQLServerConfig`) with necessary connection parameters
    - The adapter should manage its own database connection internally
 
-2. **Implement the required methods**:
+3. **Implement the required methods**:
    - `connect()`: Establish database connection using the provided configuration
    - `disconnect()`: Clean up connection
    - `getSchema(excludedTables)`: Return normalized `DatabaseSchema` with ENUMs, tables, columns, relationships
 
-3. **Update the main script** to conditionally instantiate the appropriate adapter based on configuration
-   - Pass connection configuration to the adapter constructor
-   - Call `adapter.connect()` before using the adapter
+4. **Update `src/env.ts`** to add the new database type to the `DB_TYPE` enum:
+   ```typescript
+   DB_TYPE: z.enum(["postgresql", "mysql", "sqlserver"]).optional().default("postgresql")
+   ```
 
-4. **Update action inputs** to accept database type selection
+5. **Update the main script** `generate-pg-diagram.ts` to include the new adapter in the Record:
+   ```typescript
+   const adapters: Record<typeof env.DB_TYPE, DatabaseAdapter> = {
+     postgresql: new PostgreSQLAdapter({ ... }),
+     mysql: new MySQLAdapter({ ... }),
+     sqlserver: new SQLServerAdapter({ ... }),
+   };
+   ```
+
+6. **Update `action.yml`** description to include the new database type
 
 The `MermaidGenerator` and `ReadmeWriter` modules are already database-agnostic and will work with any adapter that returns a properly formatted `DatabaseSchema`.
