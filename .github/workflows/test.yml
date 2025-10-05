@@ -1,0 +1,46 @@
+name: Test Action
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres_user
+          POSTGRES_PASSWORD: postgres_pass
+          POSTGRES_DB: postgres_db
+        options: >-
+          --health-cmd="pg_isready -U postgres_user -d postgres_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for Postgres to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres_user; do
+            echo "⏳ Waiting for database..."
+            sleep 2
+          done
+
+      - name: Create example table
+        run: |
+          PGPASSWORD=postgres_pass psql -h localhost -U postgres_user -d postgres_db -c "CREATE TABLE products (id SERIAL PRIMARY KEY, name TEXT NOT NULL);"
+
+      - name: Test Action
+        uses: ./
+        with:
+          pg-host: localhost
+          pg-user: postgres_user
+          pg-password: postgres_pass
+          pg-database: postgres_db
+          output-dir: ./docs
