@@ -38,30 +38,80 @@ The action expects these environment variables:
 
 ## Architecture
 
-### Core Script: generate-pg-diagram.ts
+The project follows a modular architecture with clear separation of concerns, designed to be extensible for multiple database systems in the future.
 
-The TypeScript script using Bun performs the following operations in sequence:
+### Module Structure
 
-1. **Database Connection**: Uses the `postgres` library to connect to PostgreSQL with credentials from environment variables
+```
+src/
+├── types/
+│   └── database-adapter.ts      # Database adapter interface and type definitions
+├── adapters/
+│   └── postgresql-adapter.ts    # PostgreSQL-specific implementation
+├── generators/
+│   └── mermaid-generator.ts     # Mermaid diagram generation logic
+├── writers/
+│   └── readme-writer.ts         # README file update logic
+├── config/
+│   └── sql-connection.ts        # Database connection configuration
+├── env.ts                       # Environment variable validation
+└── generate-pg-diagram.ts       # Main orchestration script
+```
 
-2. **ENUM Extraction**: Queries `pg_type` to find all user-defined ENUM types and their values, rendering them as pseudo-entities in the diagram
+### Core Components
 
-3. **Table Discovery**: Retrieves all tables from the public schema (excluding Flyway history), then for each table:
-   - Queries `information_schema.columns` for column metadata
-   - Determines primary keys (PK), foreign keys (FK), and unique keys (UK) via `pg_index` and constraints
-   - Formats data types with proper precision/scale information
+#### 1. Database Adapter Interface (`types/database-adapter.ts`)
 
-4. **Relationship Mapping**:
-   - Queries `information_schema.table_constraints` and `referential_constraints` to find foreign key relationships
-   - Distinguishes CASCADE relationships (identifying, rendered as `||--o{`) from non-CASCADE (non-identifying, rendered as `||..o{`)
+Defines the contract for database adapters:
+- `DatabaseAdapter` interface with `connect()`, `disconnect()`, and `getSchema()` methods
+- Type definitions for `EnumType`, `Column`, `Table`, `Relationship`, `EnumRelationship`
+- `DatabaseSchema` structure that normalizes schema data from any database
 
-5. **ENUM Relationships**: Connects tables to ENUM types via `USER-DEFINED` columns
+#### 2. PostgreSQL Adapter (`adapters/postgresql-adapter.ts`)
 
-6. **File Output**: Writes the Mermaid diagram to `docs/database-er-diagram.mmd` using Bun's native file API
+Implements `DatabaseAdapter` for PostgreSQL:
+- **Connection Management**: Handles PostgreSQL connection internally using `postgres` library
+- **Configuration**: Accepts `PostgreSQLConfig` with host, port, database, username, and password
+- **ENUM Extraction**: Queries `pg_type` to find all user-defined ENUM types and their values
+- **Table Discovery**: Retrieves all tables from the public schema (excluding specified tables)
+- **Column Metadata**: Queries `information_schema.columns` with proper data type formatting (varchar, numeric, etc.)
+- **Constraint Detection**: Determines primary keys (PK), foreign keys (FK), and unique keys (UK) via `pg_index` and constraints
+- **Relationship Mapping**: Extracts foreign key relationships with CASCADE detection
+- **ENUM Relationships**: Identifies connections between tables and ENUM types via `USER-DEFINED` columns
+
+#### 3. Mermaid Generator (`generators/mermaid-generator.ts`)
+
+Database-agnostic diagram generation:
+- Takes normalized `DatabaseSchema` and produces Mermaid ER diagram syntax
+- Renders ENUMs as pseudo-entities
+- Formats tables with columns and key indicators (PK, FK, UK)
+- Generates relationship syntax:
+  - `||--o{` for identifying relationships (CASCADE)
+  - `||..o{` for non-identifying relationships (non-CASCADE)
+  - `}o--||` for ENUM usage
+
+#### 4. README Writer (`writers/readme-writer.ts`)
+
+Handles README file integration:
+- Creates new README if it doesn't exist
+- Updates existing README with diagram markers (`<!-- ER_DIAGRAM_START -->` / `<!-- ER_DIAGRAM_END -->`)
+- Appends diagram if markers don't exist
+
+#### 5. Main Script (`generate-pg-diagram.ts`)
+
+Orchestrates the entire process:
+1. Creates adapter instance with connection configuration from environment variables
+2. Connects to database via adapter
+3. Retrieves normalized schema via adapter
+4. Generates Mermaid diagram from schema
+5. Writes diagram to `.mmd` file
+6. Optionally updates README file
+7. Handles cleanup and error cases
 
 ### Output Files
 
 - `docs/database-er-diagram.mmd` - Standalone Mermaid diagram file
+- `README.md` (optional) - Updated with embedded diagram
 
 ### GitHub Action Interface
 
@@ -84,9 +134,30 @@ The action workflow:
 ## Important Details
 
 - Uses `postgres` library for type-safe database queries
-- All queries target the `public` schema only
+- All PostgreSQL queries target the `public` schema only
 - Environment variables are validated using Zod schema in `src/env.ts`
 - The `flyway_schema_history` table is excluded by default (configurable via `EXCLUDED_TABLES`)
 - Relationship cardinality in Mermaid is determined by the DELETE rule: CASCADE = identifying, others = non-identifying
 - Bun Shell (`$`) is used for directory creation (`mkdir -p`)
 - The script can optionally integrate the diagram into README files between markers
+
+## Extending to Other Databases
+
+To add support for another database system (e.g., MySQL, SQL Server):
+
+1. **Create a new adapter** in `src/adapters/` that implements the `DatabaseAdapter` interface
+   - Define a configuration interface (e.g., `MySQLConfig`) with necessary connection parameters
+   - The adapter should manage its own database connection internally
+
+2. **Implement the required methods**:
+   - `connect()`: Establish database connection using the provided configuration
+   - `disconnect()`: Clean up connection
+   - `getSchema(excludedTables)`: Return normalized `DatabaseSchema` with ENUMs, tables, columns, relationships
+
+3. **Update the main script** to conditionally instantiate the appropriate adapter based on configuration
+   - Pass connection configuration to the adapter constructor
+   - Call `adapter.connect()` before using the adapter
+
+4. **Update action inputs** to accept database type selection
+
+The `MermaidGenerator` and `ReadmeWriter` modules are already database-agnostic and will work with any adapter that returns a properly formatted `DatabaseSchema`.
