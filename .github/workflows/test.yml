@@ -3,6 +3,8 @@ name: Test Action
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   test:
@@ -32,11 +34,30 @@ jobs:
             sleep 2
           done
 
-      - name: Create example table
+      - name: Create example schema
         run: |
-          PGPASSWORD=postgres_pass psql -h localhost -U postgres_user -d postgres_db -c "CREATE TABLE products (id SERIAL PRIMARY KEY, name TEXT NOT NULL);"
+          PGPASSWORD=postgres_pass psql -h localhost -U postgres_user -d postgres_db << 'EOF'
+          -- Create ENUM type
+          CREATE TYPE status_enum AS ENUM ('active', 'inactive', 'pending');
 
-      - name: Test Action
+          -- Create users table
+          CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            status status_enum DEFAULT 'pending'
+          );
+
+          -- Create posts table with foreign key
+          CREATE TABLE posts (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            content TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          EOF
+
+      - name: Test Action (Basic - .mmd only)
         uses: ./
         with:
           pg-host: localhost
@@ -44,3 +65,44 @@ jobs:
           pg-password: postgres_pass
           pg-database: postgres_db
           output-dir: ./docs
+
+      - name: Verify .mmd file was created
+        run: |
+          if [ ! -f "./docs/database-er-diagram.mmd" ]; then
+            echo "❌ Error: .mmd file not found!"
+            exit 1
+          fi
+          echo "✅ .mmd file created successfully"
+          cat ./docs/database-er-diagram.mmd
+
+      - name: Test Action (With README integration)
+        uses: ./
+        with:
+          pg-host: localhost
+          pg-user: postgres_user
+          pg-password: postgres_pass
+          pg-database: postgres_db
+          output-dir: ./docs
+          write-to-readme: true
+          readme-path: ./docs/README.md
+
+      - name: Verify README was updated
+        run: |
+          if [ ! -f "./docs/README.md" ]; then
+            echo "❌ Error: README not found!"
+            exit 1
+          fi
+          if ! grep -q "<!-- ER_DIAGRAM_START -->" "./docs/README.md"; then
+            echo "❌ Error: README missing diagram markers!"
+            exit 1
+          fi
+          echo "✅ README updated successfully"
+          cat ./docs/README.md
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-diagrams
+          path: |
+            docs/database-er-diagram.mmd
+            docs/README.md

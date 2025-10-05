@@ -56,5 +56,5 @@ runs:
         PGPASSWORD: ${{ inputs.pg-password }}
         WRITE_TO_README: ${{ inputs.write-to-readme }}
         README_PATH: ${{ inputs.readme-path }}
-      run: bun run $GITHUB_ACTION_PATH/generate-pg-diagram.ts
+      run: bun run $GITHUB_ACTION_PATH/src/generate-pg-diagram.ts
       shell: bash
