@@ -32,12 +32,22 @@ erDiagram
         created_at timestamp_without_time_zone
     }
 
+    audit_log {
+        id integer PK
+        table_name varchar(100)
+        action varchar(50)
+        record_id integer
+        changed_at timestamp_without_time_zone
+    }
+
     order_items {
         id integer PK
         order_id integer FK
         product_id integer FK
         quantity integer
         unit_price numeric(10_2)
+        string INDEX_idx_order_items_order_id_order_id
+        string INDEX_idx_order_items_product_id_product_id
     }
 
     orders {
@@ -47,6 +57,8 @@ erDiagram
         total_amount numeric(10_2)
         created_at timestamp_without_time_zone
         updated_at timestamp_without_time_zone
+        string INDEX_idx_orders_status_status
+        string INDEX_idx_orders_user_id_user_id
     }
 
     payments {
@@ -56,6 +68,7 @@ erDiagram
         amount numeric(10_2)
         paid_at timestamp_without_time_zone
         created_at timestamp_without_time_zone
+        string UNIQUE-INDEX_idx_payments_order_id_order_id
     }
 
     products {
@@ -66,6 +79,7 @@ erDiagram
         stock integer
         created_at timestamp_without_time_zone
         updated_at timestamp_without_time_zone
+        string INDEX_idx_products_name_name
     }
 
     reviews {
@@ -75,6 +89,8 @@ erDiagram
         rating integer
         comment text
         created_at timestamp_without_time_zone
+        string INDEX_idx_reviews_product_user_product_id_user_id
+        string UNIQUE-INDEX_reviews_product_id_user_id_key_product_id_user_id
     }
 
     users {
@@ -84,6 +100,9 @@ erDiagram
         status user_status
         created_at timestamp_without_time_zone
         updated_at timestamp_without_time_zone
+        string INDEX_idx_users_email_email
+        string INDEX_idx_users_status_status
+        string UNIQUE-INDEX_users_email_key_email
     }
 
     users ||--o{ addresses : "has"
