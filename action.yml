@@ -1,5 +1,5 @@
-name: "Generate PostgreSQL ER Diagram (Mermaid)"
-description: "Generate ER diagram in Mermaid from PostgreSQL database and update README"
+name: "Generate Database ER Diagram (Mermaid)"
+description: "Generate ER diagram in Mermaid format from PostgreSQL or MySQL databases and update README"
 author: "ViniciusDev26"
 branding:
   icon: "database"

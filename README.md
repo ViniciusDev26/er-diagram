@@ -287,11 +287,15 @@ bun run test:watch
 
 ### How It Works
 
-1. Connects to PostgreSQL using the `postgres` library
-2. Queries database metadata from `information_schema` and `pg_catalog`
-3. Extracts ENUMs, tables, columns, and relationships
-4. Generates Mermaid diagram syntax
-5. Writes to `.mmd` file and optionally updates README
+1. **Database Connection**: Connects to the database using the appropriate adapter:
+   - PostgreSQL: Uses the `postgres` library
+   - MySQL: Uses the `mysql2/promise` library
+2. **Schema Extraction**: Queries database metadata:
+   - PostgreSQL: Queries `information_schema` and `pg_catalog`
+   - MySQL: Queries `INFORMATION_SCHEMA`
+3. **Data Normalization**: Extracts ENUMs, tables, columns, and relationships into a unified schema format
+4. **Diagram Generation**: Converts the normalized schema to Mermaid ER diagram syntax
+5. **Output**: Writes to `.mmd` file and optionally updates README with embedded diagram
 
 ## Example Output
 
