@@ -1,1 +1,2 @@
-bun test
+# Testes de integração devem rodar no CI ou manualmente
+# pre-commit é para validações rápidas apenas
