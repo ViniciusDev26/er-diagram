@@ -2,6 +2,7 @@
   "name": "generate-pg-diagram",
   "version": "5.0.0",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "generate": "bun run src/generate-diagram.ts",
     "test": "bun test",

@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Generate ER Diagram
-        uses: ViniciusDev26/er-diagram@main
+        uses: ViniciusDev26/er-diagram@v1.0.0
         with:
           db-type: postgresql
           db-host: localhost
@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Generate ER Diagram
-        uses: ViniciusDev26/er-diagram@main
+        uses: ViniciusDev26/er-diagram@v1.0.0
         with:
           db-type: mysql
           db-host: localhost
@@ -207,7 +207,7 @@ By default, `flyway_schema_history` is excluded from the diagram. You can custom
 
 ```yaml
 - name: Generate ER Diagram
-  uses: ViniciusDev26/er-diagram@main
+  uses: ViniciusDev26/er-diagram@v1.0.0
   with:
     # ... other inputs
     excluded-tables: "flyway_schema_history,temp_table,audit_log"
@@ -241,7 +241,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Generate ER Diagram
-        uses: ViniciusDev26/er-diagram@main
+        uses: ViniciusDev26/er-diagram@v1.0.0
         with:
           db-type: postgresql
           db-host: ${{ secrets.DB_HOST }}
