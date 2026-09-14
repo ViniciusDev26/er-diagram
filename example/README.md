@@ -1,0 +1,192 @@
+# Example
+
+This directory shows a complete, working example of the action running against a sample e-commerce schema (the same one used in `migrations/postgres/001_init.sql`), so you can see exactly what the generated diagram looks like.
+
+## The schema
+
+The sample database has:
+
+- `users`, `addresses`, `products`, `reviews`
+- `orders`, `order_items`, `payments`
+- Three ENUM types: `user_status`, `order_status`, `payment_method`
+
+## 1. Workflow file
+
+```yaml
+# .github/workflows/er-diagram.yml
+name: Generate ER Diagram
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  generate-diagram:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # only needed if auto-commit is enabled
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate ER Diagram
+        uses: ViniciusDev26/er-diagram@v1.0.0
+        with:
+          db-type: postgresql
+          db-host: ${{ secrets.DB_HOST }}
+          db-port: 5432
+          db-name: mydb
+          db-user: ${{ secrets.DB_USER }}
+          db-pass: ${{ secrets.DB_PASSWORD }}
+          write-to-readme: true
+          auto-commit: true
+```
+
+## 2. Running it locally
+
+You can generate the same diagram locally with Docker + Bun:
+
+```bash
+docker compose up -d postgres
+
+DB_TYPE=postgresql DB_HOST=localhost DB_PORT=5432 \
+DB_NAME=er-diagram DB_USER=postgres DB_PASS=postgres \
+bun run generate
+```
+
+This writes the diagram to `docs/database-er-diagram.mmd`.
+
+## 3. The result
+
+Running the action against the sample schema produces [`database-er-diagram.mmd`](database-er-diagram.mmd), rendered below:
+
+```mermaid
+erDiagram
+
+    "order_status (ENUM)" {
+        pending string
+        processing string
+        shipped string
+        delivered string
+        cancelled string
+    }
+
+    "payment_method (ENUM)" {
+        credit_card string
+        debit_card string
+        pix string
+        boleto string
+    }
+
+    "user_status (ENUM)" {
+        active string
+        inactive string
+        suspended string
+    }
+
+    addresses {
+        id integer PK
+        user_id integer FK
+        street varchar(255)
+        city varchar(100)
+        state varchar(2)
+        zip_code varchar(10)
+        is_default boolean
+        created_at timestamp_without_time_zone
+    }
+
+    audit_log {
+        id integer PK
+        table_name varchar(100)
+        action varchar(50)
+        record_id integer
+        changed_at timestamp_without_time_zone
+    }
+
+    order_items {
+        id integer PK
+        order_id integer FK
+        product_id integer FK
+        quantity integer
+        unit_price numeric(10_2)
+        string INDEX_idx_order_items_order_id_order_id
+        string INDEX_idx_order_items_product_id_product_id
+    }
+
+    orders {
+        id integer PK
+        user_id integer FK
+        status order_status
+        total_amount numeric(10_2)
+        created_at timestamp_without_time_zone
+        updated_at timestamp_without_time_zone
+        string INDEX_idx_orders_status_status
+        string INDEX_idx_orders_user_id_user_id
+    }
+
+    payments {
+        id integer PK
+        order_id integer FK
+        payment_method payment_method
+        amount numeric(10_2)
+        paid_at timestamp_without_time_zone
+        created_at timestamp_without_time_zone
+        string UNIQUE-INDEX_idx_payments_order_id_order_id
+    }
+
+    products {
+        id integer PK
+        name varchar(255)
+        description text
+        price numeric(10_2)
+        stock integer
+        created_at timestamp_without_time_zone
+        updated_at timestamp_without_time_zone
+        string INDEX_idx_products_name_name
+    }
+
+    reviews {
+        id integer PK
+        product_id integer FK
+        user_id integer FK
+        rating integer
+        comment text
+        created_at timestamp_without_time_zone
+        string INDEX_idx_reviews_product_user_product_id_user_id
+        string UNIQUE-INDEX_reviews_product_id_user_id_key_product_id_user_id
+    }
+
+    users {
+        id integer PK
+        email varchar(255) UK
+        name varchar(255)
+        status user_status
+        created_at timestamp_without_time_zone
+        updated_at timestamp_without_time_zone
+        string INDEX_idx_users_email_email
+        string INDEX_idx_users_status_status
+        string UNIQUE-INDEX_users_email_key_email
+    }
+
+    users ||--o{ addresses : "has"
+    orders ||--o{ order_items : "has"
+    products ||..o{ order_items : "references"
+    users ||--o{ orders : "has"
+    orders ||--o{ payments : "has"
+    products ||--o{ reviews : "has"
+    users ||--o{ reviews : "has"
+
+    orders }o--|| "order_status (ENUM)" : "uses"
+    payments }o--|| "payment_method (ENUM)" : "uses"
+    users }o--|| "user_status (ENUM)" : "uses"
+```
+
+## How to read it
+
+- **`PK` / `FK` / `UK`** — Primary Key, Foreign Key, Unique Key
+- **`INDEX_...` / `UNIQUE-INDEX_...`** — regular and unique indexes (rendered as pseudo-columns since Mermaid has no native index syntax); set `show-indexes: false` to hide them
+- **`||--o{`** — identifying relationship (foreign key has `ON DELETE CASCADE`), e.g. `orders ||--o{ order_items`
+- **`||..o{`** — non-identifying relationship (no cascade), e.g. `products ||..o{ order_items`
+- **`}o--||`** — a table uses an ENUM type, e.g. `orders }o--|| "order_status (ENUM)"`
+- **`"name (ENUM)"`** — ENUM types are rendered as pseudo-entities listing their possible values
+
+For the full list of inputs and configuration options, see the main [`README.md`](../README.md).
