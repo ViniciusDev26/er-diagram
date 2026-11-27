@@ -1,0 +1,26 @@
+name: commits
+
+# The PR title must follow Conventional Commits (committed.toml): merges are squash only, so the
+# title becomes the commit on main that release-please reads. Commits inside the PR are not
+# checked, since they never reach main (and "Update branch" adds merge commits to them).
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    name: PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install committed
+        run: |
+          curl -sSfL https://github.com/crate-ci/committed/releases/download/v1.1.12/committed-v1.1.12-x86_64-unknown-linux-musl.tar.gz \
+            | tar -xz ./committed
+      - name: PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$TITLE" | ./committed --commit-file -

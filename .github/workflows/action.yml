@@ -1,0 +1,78 @@
+name: action
+
+# The Action as people use it, from dist/: against PostgreSQL and MySQL services, with the
+# example schema of the tests.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  postgresql:
+    name: The Action on PostgreSQL
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 2s --health-retries 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Load the example schema
+        env:
+          PGPASSWORD: postgres
+        run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -f tests/fixtures/postgres.sql
+      - name: Run the Action
+        id: diagram
+        uses: ./
+        with:
+          url: postgres://postgres:postgres@localhost:5432/postgres
+          output: out/database.mmd
+          readme: out/README.md
+      - name: It wrote the example diagram
+        env:
+          CHANGED: ${{ steps.diagram.outputs.changed }}
+        run: |
+          diff example/database.mmd out/database.mmd
+          grep -q '<!-- ER_DIAGRAM_START -->' out/README.md
+          test "$CHANGED" = true
+
+  mysql:
+    name: The Action on MySQL
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: shop
+        ports: ["3306:3306"]
+        options: --health-cmd "mysqladmin ping -h localhost" --health-interval 2s --health-retries 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: Load the example schema
+        run: |
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE other; CREATE TABLE other.accounts (id INT PRIMARY KEY);"
+          mysql -h 127.0.0.1 -u root -proot shop < tests/fixtures/mysql.sql
+      - name: Run the Action
+        id: diagram
+        uses: ./
+        with:
+          type: mysql
+          host: 127.0.0.1
+          database: shop
+          user: root
+          password: root
+          indexes: true
+      - name: It drew the shop
+        env:
+          DIAGRAM: ${{ steps.diagram.outputs.diagram }}
+        run: |
+          grep -q 'enum status "active, inactive, it' docs/database.mmd
+          grep -q 'users ||--o| profiles : user_id' docs/database.mmd
+          test "$(printf '%s' "$DIAGRAM")" = "$(cat docs/database.mmd)"
