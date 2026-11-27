@@ -1,6 +1,6 @@
 {
   "name": "erdraw",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "Draws the Mermaid ER diagram of a PostgreSQL, MySQL or MariaDB database",
   "keywords": [
     "er-diagram",
