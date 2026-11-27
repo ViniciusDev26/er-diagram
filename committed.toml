@@ -1,0 +1,8 @@
+# Commit messages follow the Conventional Commits rules of commitlint's config-conventional,
+# which release-please relies on. Checked by `committed` (no Node.js needed).
+style = "conventional"
+allowed_types = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
+subject_length = 100
+line_length = 100
+subject_capitalized = false
+imperative_subject = false
