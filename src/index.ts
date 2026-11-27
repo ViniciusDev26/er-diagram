@@ -8,4 +8,6 @@ void run({
   info: (message) => core.info(message),
   warning: (message) => core.warning(message),
   setFailed: (message) => core.setFailed(message),
+  setSecret: (secret) => core.setSecret(secret),
+  print: (text) => process.stdout.write(text),
 });

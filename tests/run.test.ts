@@ -85,7 +85,7 @@ describe("run", () => {
     const readme = readFileSync(join(cwd, "README.md"), "utf8");
     expect(readme).toContain("## Database diagram");
     expect(readme).toContain(
-      'integer user_id FK "index orders_by_user_and_status (user_id, status)"',
+      'integer user_id FK "partial unique one_pending_order_per_user; index orders_by_user_and_status (user_id, status)"',
     );
 
     const again = await action({ url, readme: "README.md", output: "schema.mmd", indexes: "true" });
