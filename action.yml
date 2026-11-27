@@ -1,6 +1,6 @@
 name: "erdraw"
 description: "Draws the Mermaid ER diagram of a PostgreSQL or MySQL database, into a file and your README"
-author: "ViniciusDev26"
+author: "sugomi-dev"
 branding:
   icon: "database"
   color: "green"

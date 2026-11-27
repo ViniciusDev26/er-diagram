@@ -171,8 +171,9 @@ starts no other workflow, so the commit cannot loop.
 
 ## Coming from er-diagram
 
-erdraw is the next major version of `ViniciusDev26/er-diagram` (v1 to v4), renamed. The inputs
-changed name:
+erdraw is the next major version of `ViniciusDev26/er-diagram` (v1 to v4), renamed and moved to
+sugomi-dev. Workflows on `@v1` to `@v4` keep working through GitHub's redirect. To move to
+`sugomi-dev/erdraw@v5`, rename the inputs:
 
 | er-diagram | erdraw |
 |---|---|

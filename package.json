@@ -4,6 +4,11 @@
   "private": true,
   "description": "Draws the Mermaid ER diagram of a PostgreSQL or MySQL database",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sugomi-dev/erdraw.git"
+  },
+  "homepage": "https://github.com/sugomi-dev/erdraw#readme",
   "type": "module",
   "engines": {
     "node": ">=24"
