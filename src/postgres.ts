@@ -1,7 +1,8 @@
+import type { ConnectionOptions } from "node:tls";
 import postgres from "postgres";
 import type { Connection, ReadOptions } from "./connection.ts";
-import { excluder } from "./exclude.ts";
-import type { ForeignKey, Index, Schema, Table } from "./schema.ts";
+import { tableFilter } from "./exclude.ts";
+import type { Column, ForeignKey, Index, Schema, Table } from "./schema.ts";
 
 /** PostgreSQL's long type names, as people write them. */
 const SHORT_TYPES: [RegExp, string][] = [
@@ -18,6 +19,17 @@ const SHORT_TYPES: [RegExp, string][] = [
 const shortType = (type: string) =>
   SHORT_TYPES.reduce((short, [pattern, replacement]) => short.replace(pattern, replacement), type);
 
+/** The TLS options of the connection, or false for none. */
+export function postgresSsl(connection: Connection): false | ConnectionOptions {
+  if (connection.ssl === undefined) return false;
+  if (connection.ssl === "require") return { rejectUnauthorized: false };
+  return {
+    rejectUnauthorized: true,
+    ...(connection.ca ? { ca: connection.ca } : {}),
+    ...(connection.ssl === "verify-ca" ? { checkServerIdentity: () => undefined } : {}),
+  };
+}
+
 interface TableRow {
   oid: string;
   schema: string;
@@ -30,18 +42,22 @@ interface ColumnRow {
   type: string;
   nullable: boolean;
   values: string[] | null;
+  comment: string | null;
 }
 interface ConstraintRow {
   table: string;
   kind: "p" | "f";
-  columns: number[];
+  columns: string[];
   references: string | null;
-  referenced: number[] | null;
+  /** The referenced table's qualified name, for one outside the diagram. */
+  qualified: string | null;
+  referenced: string[] | null;
 }
 interface IndexRow {
   table: string;
   name: string;
   unique: boolean;
+  partial: boolean;
   columns: number[];
 }
 
@@ -55,14 +71,14 @@ export async function readPostgres(
 ): Promise<Schema> {
   const schemas = options.schemas ?? ["public"];
   const qualify = schemas.length > 1;
-  const isExcluded = excluder(options.exclude);
+  const isDrawn = tableFilter(options.include, options.exclude);
   const sql = postgres({
     host: connection.host,
     port: connection.port,
     database: connection.database,
     username: connection.user,
     password: connection.password,
-    ssl: connection.ssl ? "require" : false,
+    ssl: postgresSsl(connection),
     max: 1,
   });
   try {
@@ -70,26 +86,38 @@ export async function readPostgres(
       SELECT c.oid::text AS oid, n.nspname AS schema, c.relname AS name
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE c.relkind IN ('r', 'p') AND NOT c.relispartition AND n.nspname = ANY(${schemas})`;
-    const tables = tableRows.filter((row) => !isExcluded(row.name, `${row.schema}.${row.name}`));
+    const tables = tableRows.filter((row) => isDrawn(row.name, `${row.schema}.${row.name}`));
     const oids = tables.map((row) => row.oid);
     const [columnRows, constraintRows, indexRows] = await Promise.all([
       sql<ColumnRow[]>`
         SELECT a.attrelid::text AS table, a.attnum AS position, a.attname AS name,
                format_type(a.atttypid, a.atttypmod) AS type, NOT a.attnotnull AS nullable,
                (SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
-                FROM pg_enum e WHERE e.enumtypid = a.atttypid) AS values
+                FROM pg_enum e WHERE e.enumtypid = a.atttypid) AS values,
+               col_description(a.attrelid, a.attnum) AS comment
         FROM pg_attribute a
         WHERE a.attrelid::text = ANY(${oids}) AND a.attnum > 0 AND NOT a.attisdropped
         ORDER BY a.attnum`,
       sql<ConstraintRow[]>`
-        SELECT conrelid::text AS table, contype AS kind, conkey AS columns,
-               confrelid::text AS references, confkey AS referenced
-        FROM pg_constraint
-        WHERE conrelid::text = ANY(${oids}) AND contype IN ('p', 'f')
-        ORDER BY conkey[1], conname`,
+        SELECT c.conrelid::text AS table, c.contype AS kind,
+               ARRAY(SELECT a.attname::text FROM unnest(c.conkey) WITH ORDINALITY k(n, o)
+                     JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.n
+                     ORDER BY k.o) AS columns,
+               NULLIF(c.confrelid, 0)::text AS references,
+               (SELECT n.nspname || '.' || r.relname FROM pg_class r
+                JOIN pg_namespace n ON n.oid = r.relnamespace WHERE r.oid = c.confrelid) AS qualified,
+               ARRAY(SELECT a.attname::text FROM unnest(c.confkey) WITH ORDINALITY k(n, o)
+                     JOIN pg_attribute a ON a.attrelid = c.confrelid AND a.attnum = k.n
+                     ORDER BY k.o) AS referenced
+        FROM pg_constraint c
+        WHERE c.conrelid::text = ANY(${oids}) AND c.contype IN ('p', 'f')
+        ORDER BY c.conkey[1], c.conname`,
       sql<IndexRow[]>`
         SELECT i.indrelid::text AS table, c.relname AS name, i.indisunique AS unique,
-               i.indkey::int2[] AS columns
+               i.indpred IS NOT NULL AS partial,
+               -- The key columns: a covering index stores its INCLUDE columns after them.
+               ARRAY(SELECT k.n FROM unnest(i.indkey::int2[]) WITH ORDINALITY k(n, o)
+                     WHERE k.o <= i.indnkeyatts ORDER BY k.o) AS columns
         FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
         WHERE i.indrelid::text = ANY(${oids}) AND NOT i.indisprimary
         ORDER BY c.relname`,
@@ -112,8 +140,10 @@ export async function readPostgres(
       positions.set(row.oid, new Map());
     }
     for (const row of columnRows) {
-      const column = { name: row.name, type: shortType(row.type), nullable: row.nullable };
-      byOid.get(row.table)?.columns.push(row.values ? { ...column, values: row.values } : column);
+      const column: Column = { name: row.name, type: shortType(row.type), nullable: row.nullable };
+      if (row.values) column.values = row.values;
+      if (row.comment) column.comment = row.comment;
+      byOid.get(row.table)?.columns.push(column);
       positions.get(row.table)?.set(row.position, row.name);
     }
     const named = (table: string, columns: number[]) =>
@@ -121,16 +151,14 @@ export async function readPostgres(
     for (const row of constraintRows) {
       const table = byOid.get(row.table) as Table;
       if (row.kind === "p") {
-        table.primaryKey = named(row.table, row.columns);
+        table.primaryKey = row.columns;
         continue;
       }
-      const references = names.get(row.references as string);
-      if (references === undefined) continue;
       const fk: ForeignKey = {
-        columns: named(row.table, row.columns),
+        columns: row.columns,
         references: {
-          table: references,
-          columns: named(row.references as string, row.referenced as number[]),
+          table: names.get(row.references as string) ?? (row.qualified as string),
+          columns: row.referenced as string[],
         },
       };
       table.foreignKeys.push(fk);
@@ -143,6 +171,7 @@ export async function readPostgres(
         columns: named(row.table, row.columns),
         unique: row.unique,
       };
+      if (row.partial) index.partial = true;
       byOid.get(row.table)?.indexes.push(index);
     }
     return { tables: [...byOid.values()].sort((a, b) => (a.name < b.name ? -1 : 1)) };
