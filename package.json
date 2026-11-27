@@ -1,30 +1,45 @@
 {
   "name": "erdraw",
   "version": "5.0.0",
-  "private": true,
-  "description": "Draws the Mermaid ER diagram of a PostgreSQL or MySQL database",
+  "description": "Draws the Mermaid ER diagram of a PostgreSQL, MySQL or MariaDB database",
+  "keywords": [
+    "er-diagram",
+    "erd",
+    "mermaid",
+    "postgresql",
+    "mysql",
+    "mariadb",
+    "database",
+    "schema",
+    "github-action",
+    "cli"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sugomi-dev/erdraw.git"
   },
   "homepage": "https://github.com/sugomi-dev/erdraw#readme",
+  "bugs": "https://github.com/sugomi-dev/erdraw/issues",
+  "bin": {
+    "erdraw": "dist/cli.cjs"
+  },
+  "files": [
+    "dist/cli.cjs"
+  ],
   "type": "module",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --format=cjs --legal-comments=none --outfile=dist/index.cjs",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --format=cjs --legal-comments=none --outfile=dist/index.cjs && esbuild src/bin.ts --bundle --platform=node --target=node24 --format=cjs --legal-comments=none --banner:js='#!/usr/bin/env node' --outfile=dist/cli.cjs",
     "check": "biome check . && tsc --noEmit",
     "test": "vitest run --coverage"
   },
-  "dependencies": {
-    "@actions/core": "^3.0.1",
-    "mysql2": "^3.24.6",
-    "postgres": "^4.1.1"
-  },
   "devDependencies": {
+    "@actions/core": "^3.0.1",
     "@biomejs/biome": "^2.6.9",
+    "@testcontainers/mariadb": "^12.2.2",
     "@testcontainers/mysql": "^12.2.2",
     "@testcontainers/postgresql": "^12.2.2",
     "@types/node": "^26.6.11",
@@ -32,6 +47,8 @@
     "esbuild": "^0.28.2",
     "jsdom": "^31.0.1",
     "mermaid": "^12.3.0",
+    "mysql2": "^3.24.6",
+    "postgres": "^4.1.1",
     "testcontainers": "^12.2.2",
     "typescript": "^7.0.2",
     "vitest": "^5.1.2"

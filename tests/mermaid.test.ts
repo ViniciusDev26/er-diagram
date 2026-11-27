@@ -204,6 +204,38 @@ describe("render", () => {
     });
   });
 
+  describe("partial unique indexes", () => {
+    // Unique only for the rows they cover (`WHERE deleted_at IS NULL`): not a key of the table.
+    const child = table("child", {
+      columns: [column("id"), column("a")],
+      indexes: [{ name: "one_open_a", columns: ["a"], unique: true, partial: true }],
+      foreignKeys: [{ columns: ["a"], references: { table: "parent", columns: ["id"] } }],
+    });
+
+    test("are not a UK and keep the foreign key one to many", () => {
+      const diagram = render({ tables: [table("parent"), child] });
+      expect(diagram).toContain("        integer a FK\n");
+      expect(diagram).toContain("    parent ||..o{ child : a");
+    });
+
+    test("say they are partial when indexes are shown", () => {
+      const diagram = render({ tables: [table("parent"), child] }, { indexes: true });
+      expect(diagram).toContain('        integer a FK "partial unique one_open_a"');
+    });
+  });
+
+  test("a column's comment in the database comes first in its comment", () => {
+    const users = table("users", {
+      columns: [
+        column("email", "text", { comment: 'Where "receipts"\ngo' }),
+        column("status", "mood", { comment: "Mood", values: ["ok", "sad"] }),
+      ],
+    });
+    const diagram = render({ tables: [users] });
+    expect(diagram).toContain("        text email \"Where 'receipts' go\"");
+    expect(diagram).toContain('        mood status "Mood; ok, sad"');
+  });
+
   test("an empty database is an empty diagram", () => {
     expect(render({ tables: [] })).toBe("erDiagram\n");
   });

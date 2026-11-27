@@ -15,7 +15,8 @@ async function git(cwd: string, ...args: string[]): Promise<string> {
 
 /**
  * Commits the files, and only them, to the checked-out branch and pushes it. Returns false when
- * they have no change.
+ * they have no change. When the branch moved meanwhile (another job pushed), the commit is rebased
+ * on it and pushed again, three tries in all.
  */
 export async function commitFiles(
   cwd: string,
@@ -46,6 +47,16 @@ export async function commitFiles(
     "--",
     ...files,
   );
-  await git(cwd, "push", "--quiet", "origin", `HEAD:refs/heads/${branch}`);
-  return true;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await git(cwd, "push", "--quiet", "origin", `HEAD:refs/heads/${branch}`);
+      return true;
+    } catch (error) {
+      if (attempt === 3) throw error;
+      // What the user staged is stashed and back after the rebase.
+      await git(cwd, "pull", "--quiet", "--rebase", "--autostash", "origin", branch).catch(() => {
+        throw error;
+      });
+    }
+  }
 }

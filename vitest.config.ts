@@ -9,8 +9,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      // The entry only hands the real @actions/core to `run`, which the tests call directly.
-      exclude: ["src/index.ts"],
+      // The entries only hand @actions/core or the process to `run` and `cli`, which the tests call.
+      exclude: ["src/index.ts", "src/bin.ts"],
       thresholds: { lines: 100, functions: 100, branches: 100, statements: 100 },
     },
   },

@@ -20,7 +20,7 @@ erDiagram
     }
     products {
         integer id PK
-        text name
+        text name UK
         numeric(10_2) price
     }
     profiles {
@@ -36,7 +36,7 @@ erDiagram
     }
     users {
         integer id PK
-        varchar(255) email UK
+        varchar(255) email UK "Where the receipts go"
         text name
         user_status status "active, inactive, suspended"
         integer invited_by FK

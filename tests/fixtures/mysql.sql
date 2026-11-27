@@ -1,7 +1,7 @@
 -- The shop of the examples in MySQL: enums live on their columns.
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE COMMENT 'Where the receipts go',
     status ENUM('active', 'inactive', 'it''s off') NOT NULL DEFAULT 'active',
     invited_by INT NULL,
     credit DECIMAL(10, 2) UNSIGNED NOT NULL DEFAULT 0,
@@ -42,7 +42,7 @@ CREATE TABLE shipments (
     FOREIGN KEY (order_id, line) REFERENCES order_items(order_id, line)
 );
 
--- A functional index has no column to show.
+-- A functional index has no column to show (MySQL only: the tests leave it out on MariaDB).
 CREATE INDEX users_by_lower_email ON users ((lower(email)));
 
 CREATE TABLE flyway_schema_history (installed_rank INT PRIMARY KEY, version VARCHAR(50), INDEX (version));

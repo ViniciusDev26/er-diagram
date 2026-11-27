@@ -42,6 +42,8 @@ async function action(inputs: Record<string, string>) {
     outputs: {} as Record<string, string>,
     info: [] as string[],
     warnings: [] as string[],
+    secrets: [] as string[],
+    printed: "",
     failed: undefined as string | undefined,
   };
   const io: Io = {
@@ -52,6 +54,10 @@ async function action(inputs: Record<string, string>) {
     },
     info: (message) => said.info.push(message),
     warning: (message) => said.warnings.push(message),
+    setSecret: (secret) => said.secrets.push(secret),
+    print: (text) => {
+      said.printed += text;
+    },
     setFailed: (message) => {
       said.failed = message;
     },
@@ -79,7 +85,7 @@ describe("run", () => {
     const readme = readFileSync(join(cwd, "README.md"), "utf8");
     expect(readme).toContain("## Database diagram");
     expect(readme).toContain(
-      'integer user_id FK "index orders_by_user_and_status (user_id, status)"',
+      'integer user_id FK "partial unique one_pending_order_per_user; index orders_by_user_and_status (user_id, status)"',
     );
 
     const again = await action({ url, readme: "README.md", output: "schema.mmd", indexes: "true" });
@@ -117,6 +123,46 @@ describe("run", () => {
 
     const again = await action({ url, readme: "README.md", commit: "true" });
     expect(again.info).toContain("nothing changed: no commit");
+  });
+
+  test("the password is a secret, kept out of the logs", async () => {
+    const said = await action({ url });
+    expect(said.secrets).toEqual([container.getPassword()]);
+    expect((await action({ database: "d", user: "u" })).secrets).toEqual([]);
+  });
+
+  test("check fails when the files are not the diagram, and writes nothing", async () => {
+    await action({ url, readme: "README.md" });
+    const ok = await action({ url, readme: "README.md", check: "true" });
+    expect(ok.failed).toBeUndefined();
+    expect(ok.outputs.changed).toBe("false");
+    expect(ok.info).toContain("docs/database.mmd and README.md are up to date");
+
+    writeFileSync(join(cwd, "README.md"), "# Shop\n");
+    const stale = await action({ url, readme: "README.md", check: "true" });
+    expect(stale.outputs.changed).toBe("true");
+    expect(stale.failed).toBe(
+      "README.md is not the diagram of the database: run erdraw and commit it",
+    );
+    expect(readFileSync(join(cwd, "README.md"), "utf8")).toBe("# Shop\n");
+
+    const missing = await action({ url, output: "other.mmd", check: "true" });
+    expect(missing.failed).toBe(
+      "other.mmd is not the diagram of the database: run erdraw and commit it",
+    );
+    expect(existsSync(join(cwd, "other.mmd"))).toBe(false);
+  });
+
+  test("an output of - prints the diagram instead of writing it", async () => {
+    const said = await action({ url, output: "-" });
+    expect(said.printed).toMatch(/^erDiagram\n/);
+    expect(said.outputs.diagram).toBe(said.printed);
+    expect(existsSync(join(cwd, "-"))).toBe(false);
+  });
+
+  test("says which foreign keys point outside the diagram", async () => {
+    const said = await action({ url, schemas: "billing" });
+    expect(said.info).toContain("invoices (order_id) references public.orders: not drawn");
   });
 
   test("an empty database is a warning, not a failure", async () => {

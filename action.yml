@@ -1,5 +1,5 @@
 name: "erdraw"
-description: "Draws the Mermaid ER diagram of a PostgreSQL or MySQL database, into a file and your README"
+description: "Draws the Mermaid ER diagram of a PostgreSQL, MySQL or MariaDB database, into a file and your README"
 author: "sugomi-dev"
 branding:
   icon: "database"
@@ -7,10 +7,10 @@ branding:
 
 inputs:
   url:
-    description: "Connection URL: postgres://user:password@host:5432/db or mysql://user:password@host:3306/db. Replaces type, host, port, database, user and password."
+    description: "Connection URL: postgres://user:password@host:5432/db, mysql://... or mariadb://... Replaces type, host, port, database, user and password."
     required: false
   type:
-    description: "postgresql or mysql (default: postgresql)"
+    description: "postgresql, mysql or mariadb (default: postgresql)"
     required: false
   host:
     description: "Database host (default: localhost)"
@@ -28,10 +28,16 @@ inputs:
     description: "Database password"
     required: false
   ssl:
-    description: "Encrypt the connection, without verifying the certificate (default: false; sslmode=require in the url does the same)"
+    description: "Encrypt the connection: true or require (without verifying the certificate), verify-ca, verify-full, or false (default: the url's sslmode or ssl-mode, else false)"
+    required: false
+  ssl-ca:
+    description: "CA certificate (PEM) to verify the server with; implies ssl: verify-full unless ssl says otherwise"
     required: false
   schemas:
-    description: "PostgreSQL schemas to draw, comma-separated (default: public). With several, tables are named schema.table."
+    description: "PostgreSQL schemas (default: public) or MySQL databases (default: the connection's) to draw, comma-separated. With several, tables are named schema.table."
+    required: false
+  include:
+    description: "Only these tables, comma-separated; * matches anything (e.g. order*, billing.*). Default: all."
     required: false
   exclude:
     description: "Tables to leave out, comma-separated; * matches anything (e.g. audit_*). Migration tools' tables are always left out."
@@ -44,6 +50,9 @@ inputs:
     required: false
   indexes:
     description: "Show each index as a comment on its first column (default: false)"
+    required: false
+  check:
+    description: "Write nothing, and fail when the output (and the README) are not the diagram of the database (default: false). For pull requests."
     required: false
   commit:
     description: "Commit and push the diagram when it changed (default: false). Needs contents: write and a checked-out branch."
@@ -61,7 +70,7 @@ outputs:
   path:
     description: "The file it was written to"
   changed:
-    description: "true when the diagram or the README changed"
+    description: "true when the diagram or the README changed (with check: when they are stale)"
 
 runs:
   using: "node24"

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -56,6 +56,36 @@ describe("commitFiles", () => {
     writeFileSync(join(work, "diagram.mmd"), "erDiagram\n");
     await expect(commitFiles(work, ["diagram.mmd"], author)).rejects.toThrow(
       /HEAD is detached.*ref: \$\{\{ github\.head_ref \}\}/,
+    );
+  });
+
+  test("a branch that moved meanwhile is rebased on, and the push tried again", async () => {
+    const other = join(remote, "..", "other");
+    execFileSync("git", ["clone", "--quiet", remote, other], { stdio: "ignore" });
+    writeFileSync(join(other, "app.txt"), "someone else's work\n");
+    git(other, "add", ".");
+    git(other, "-c", "user.name=O", "-c", "user.email=o@o", "commit", "--quiet", "-m", "other");
+    git(other, "push", "--quiet", "origin", "main");
+    writeFileSync(join(work, "diagram.mmd"), "erDiagram\n");
+    writeFileSync(join(work, "staged.txt"), "staged\n");
+    git(work, "add", "staged.txt");
+
+    expect(await commitFiles(work, ["diagram.mmd"], author)).toBe(true);
+    expect(git(remote, "log", "--format=%s", "main").split("\n")).toEqual([
+      "docs: diagram",
+      "other",
+      "init",
+    ]);
+    expect(git(work, "status", "--porcelain")).toBe("A  staged.txt");
+  });
+
+  test("a push the remote keeps rejecting fails after three tries", async () => {
+    const hook = join(remote, "hooks", "pre-receive");
+    writeFileSync(hook, "#!/bin/sh\necho rejected by policy >&2\nexit 1\n");
+    chmodSync(hook, 0o755);
+    writeFileSync(join(work, "diagram.mmd"), "erDiagram\n");
+    await expect(commitFiles(work, ["diagram.mmd"], author)).rejects.toThrow(
+      /git push failed:.*rejected by policy/s,
     );
   });
 

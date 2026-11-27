@@ -57,8 +57,14 @@ CREATE TABLE shipments (
 
 CREATE INDEX orders_by_user_and_status ON orders (user_id, status);
 CREATE INDEX products_by_name ON products (name);
+-- A covering index: the included column is not part of the key.
+CREATE UNIQUE INDEX products_name_key ON products (name) INCLUDE (price);
+-- Unique among pending orders only: a user still has many orders.
+CREATE UNIQUE INDEX one_pending_order_per_user ON orders (user_id) WHERE status = 'pending';
 -- An expression index has no column to show.
 CREATE INDEX users_by_lower_email ON users (lower(email));
+
+COMMENT ON COLUMN users.email IS 'Where the receipts go';
 
 -- A migration tool's table and a view: never in the diagram.
 CREATE TABLE flyway_schema_history (installed_rank INTEGER PRIMARY KEY);
