@@ -3,7 +3,7 @@ import { MariaDbContainer } from "@testcontainers/mariadb";
 import { MySqlContainer } from "@testcontainers/mysql";
 import mysql from "mysql2/promise";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { Connection } from "../src/connection.ts";
+import type { Connection, SslMode } from "../src/connection.ts";
 import { readMysql } from "../src/mysql.ts";
 import type { Schema, Table } from "../src/schema.ts";
 
@@ -155,7 +155,7 @@ describe.each(engines)("readMysql on $engine", ({ engine, start }) => {
     async () => {
       // MySQL signs its certificate with a CA of its own, for a server name that is not the host.
       const ca = (await container.exec(["cat", "/var/lib/mysql/ca.pem"])).output;
-      const read = (ssl: Connection["ssl"], extra: Partial<Connection> = {}) =>
+      const read = (ssl: SslMode, extra: { ca?: string } = {}) =>
         readMysql({ ...connection, ssl, ...extra }, { exclude: ["*"] });
       await expect(read("verify-ca", { ca })).resolves.toEqual({ tables: [] });
       await expect(read("verify-ca")).rejects.toThrow(/certificate/);
