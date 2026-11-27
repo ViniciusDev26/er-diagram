@@ -57,6 +57,12 @@ jobs:
       - uses: actions/checkout@v7
       - name: Load the example schema
         run: |
+          # The health check passes on the server that initializes the database, which then
+          # restarts: wait for the one that stays.
+          for _ in $(seq 60); do
+            mysql -h 127.0.0.1 -u root -proot -e "SELECT 1" shop >/dev/null 2>&1 && break
+            sleep 2
+          done
           mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE other; CREATE TABLE other.accounts (id INT PRIMARY KEY);"
           mysql -h 127.0.0.1 -u root -proot shop < tests/fixtures/mysql.sql
       - name: Run the Action
