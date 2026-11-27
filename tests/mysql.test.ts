@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import mysql from "mysql2/promise";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { Connection } from "../src/connection.ts";
@@ -18,7 +19,9 @@ beforeAll(async () => {
     password: container.getUserPassword(),
   };
   const fixture = readFileSync(new URL("fixtures/mysql.sql", import.meta.url), "utf8");
-  await container.executeQuery(fixture);
+  const db = await mysql.createConnection({ ...connection, multipleStatements: true });
+  await db.query(fixture);
+  await db.end();
 });
 
 afterAll(async () => {
