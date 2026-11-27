@@ -1,6 +1,6 @@
 {
   "name": "erdraw",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "description": "Draws the Mermaid ER diagram of a PostgreSQL or MySQL database",
   "license": "MIT",
