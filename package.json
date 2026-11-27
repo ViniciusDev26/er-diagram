@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.9",
+    "@testcontainers/mariadb": "^12.2.2",
     "@testcontainers/mysql": "^12.2.2",
     "@testcontainers/postgresql": "^12.2.2",
     "@types/node": "^26.6.11",
