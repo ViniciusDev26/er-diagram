@@ -2,7 +2,7 @@ name: release
 
 # release-please keeps a release PR open from the Conventional Commits on main. Merging it tags
 # the version and publishes the GitHub release; the major tag (`v5`) then moves to it, since the
-# Action is used by its major version.
+# Action is used by its major version, and the command line is published to npm.
 on:
   push:
     branches: [main]
@@ -49,3 +49,21 @@ jobs:
           major="v${VERSION%%.*}"
           git tag -f "$major" "$TAG"
           git push -f origin "refs/tags/$major"
+
+  npm:
+    name: Publish to npm
+    needs: release-please
+    # Trusted publishing (OIDC), no token: on once npmjs.com trusts this workflow for erdraw and the
+    # repository variable NPM_PUBLISH is true.
+    if: needs.release-please.outputs.created == 'true' && vars.NPM_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm publish --provenance --access public

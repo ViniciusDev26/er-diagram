@@ -41,6 +41,29 @@ jobs:
           diff example/database.mmd out/database.mmd
           grep -q '<!-- ER_DIAGRAM_START -->' out/README.md
           test "$CHANGED" = true
+      - name: Check the files it wrote
+        uses: ./
+        with:
+          url: postgres://postgres:postgres@localhost:5432/postgres
+          output: out/database.mmd
+          readme: out/README.md
+          check: true
+      - name: Check a stale file
+        id: stale
+        continue-on-error: true
+        uses: ./
+        with:
+          url: postgres://postgres:postgres@localhost:5432/postgres
+          output: example/missing.mmd
+          check: true
+      - name: The stale file failed the check
+        env:
+          OUTCOME: ${{ steps.stale.outcome }}
+        run: test "$OUTCOME" = failure
+      - name: The command line prints the same diagram
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+        run: node dist/cli.cjs -o - | diff example/database.mmd -
 
   mysql:
     name: The Action on MySQL
