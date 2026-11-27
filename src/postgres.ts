@@ -49,7 +49,10 @@ interface IndexRow {
  * The schema of a PostgreSQL database: its tables (partitioned ones once, views never) with their
  * columns, primary keys, indexes and foreign keys. Four queries, whatever the size.
  */
-export async function readPostgres(connection: Connection, options: ReadOptions = {}): Promise<Schema> {
+export async function readPostgres(
+  connection: Connection,
+  options: ReadOptions = {},
+): Promise<Schema> {
   const schemas = options.schemas ?? ["public"];
   const qualify = schemas.length > 1;
   const isExcluded = excluder(options.exclude);
@@ -61,7 +64,6 @@ export async function readPostgres(connection: Connection, options: ReadOptions 
     password: connection.password,
     ssl: connection.ssl ? "require" : false,
     max: 1,
-    onnotice: () => {},
   });
   try {
     const tableRows = await sql<TableRow[]>`
@@ -93,7 +95,9 @@ export async function readPostgres(connection: Connection, options: ReadOptions 
         ORDER BY c.relname`,
     ]);
 
-    const names = new Map(tables.map((row) => [row.oid, qualify ? `${row.schema}.${row.name}` : row.name]));
+    const names = new Map(
+      tables.map((row) => [row.oid, qualify ? `${row.schema}.${row.name}` : row.name]),
+    );
     // Column names by table and position, for the keys, which PostgreSQL stores as positions.
     const positions = new Map<string, Map<number, string>>();
     const byOid = new Map<string, Table>();
@@ -124,14 +128,21 @@ export async function readPostgres(connection: Connection, options: ReadOptions 
       if (references === undefined) continue;
       const fk: ForeignKey = {
         columns: named(row.table, row.columns),
-        references: { table: references, columns: named(row.references as string, row.referenced as number[]) },
+        references: {
+          table: references,
+          columns: named(row.references as string, row.referenced as number[]),
+        },
       };
       table.foreignKeys.push(fk);
     }
     for (const row of indexRows) {
       // An expression index has position 0 for its expressions: no column to show.
       if (row.columns.includes(0)) continue;
-      const index: Index = { name: row.name, columns: named(row.table, row.columns), unique: row.unique };
+      const index: Index = {
+        name: row.name,
+        columns: named(row.table, row.columns),
+        unique: row.unique,
+      };
       byOid.get(row.table)?.indexes.push(index);
     }
     return { tables: [...byOid.values()].sort((a, b) => (a.name < b.name ? -1 : 1)) };

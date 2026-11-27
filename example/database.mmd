@@ -1,0 +1,51 @@
+erDiagram
+    coupons {
+        text code PK
+        integer percent
+    }
+    events {
+        bigint id PK
+        date at PK
+    }
+    order_items {
+        integer order_id PK, FK
+        integer product_id PK, FK
+        integer quantity
+    }
+    orders {
+        integer id PK
+        integer user_id FK
+        text coupon_code FK
+        order_status status "pending, paid, shipped, cancelled"
+    }
+    products {
+        integer id PK
+        text name
+        numeric(10_2) price
+    }
+    profiles {
+        integer user_id PK, FK
+        text bio
+        text[] tags
+    }
+    shipments {
+        bigint id PK
+        integer order_id FK
+        integer product_id FK
+        timestamp shipped_at
+    }
+    users {
+        integer id PK
+        varchar(255) email UK
+        text name
+        user_status status "active, inactive, suspended"
+        integer invited_by FK
+        timestamptz created_at
+    }
+    orders ||--o{ order_items : order_id
+    products ||--o{ order_items : product_id
+    users ||..o{ orders : user_id
+    coupons |o..o{ orders : coupon_code
+    users ||--o| profiles : user_id
+    order_items ||..o| shipments : "order_id, product_id"
+    users |o..o{ users : invited_by

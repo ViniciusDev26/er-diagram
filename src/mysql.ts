@@ -15,7 +15,10 @@ export function enumValues(columnType: string): string[] {
  * The schema of a MySQL database: its base tables with their columns, primary keys, indexes and
  * foreign keys, from `information_schema`. Four queries, whatever the size.
  */
-export async function readMysql(connection: Connection, options: ReadOptions = {}): Promise<Schema> {
+export async function readMysql(
+  connection: Connection,
+  options: ReadOptions = {},
+): Promise<Schema> {
   const isExcluded = excluder(options.exclude);
   const db = await mysql.createConnection({
     host: connection.host,
@@ -74,7 +77,8 @@ export async function readMysql(connection: Connection, options: ReadOptions = {
       }
       if (row.refSchema !== connection.database || !tables.has(row.refTable)) continue;
       const key = `${row.tbl}.${row.name}`;
-      if (key !== last) table.foreignKeys.push({ columns: [], references: { table: row.refTable, columns: [] } });
+      if (key !== last)
+        table.foreignKeys.push({ columns: [], references: { table: row.refTable, columns: [] } });
       last = key;
       const fk = table.foreignKeys.at(-1) as Table["foreignKeys"][number];
       fk.columns.push(row.col);
@@ -88,13 +92,18 @@ export async function readMysql(connection: Connection, options: ReadOptions = {
       const key = `${row.tbl}.${row.name}`;
       // A functional index has no column name for its expressions: no column to show.
       if (row.col === null) functional.add(key);
-      if (key !== last) table.indexes.push({ name: row.name, columns: [], unique: row.isUnique === 1 });
+      if (key !== last)
+        table.indexes.push({ name: row.name, columns: [], unique: row.isUnique === 1 });
       last = key;
-      table.indexes.at(-1)?.columns.push(row.col);
+      (table.indexes.at(-1) as Table["indexes"][number]).columns.push(row.col);
     }
     for (const table of tables.values()) {
-      table.indexes = table.indexes.filter((index) => !functional.has(`${table.name}.${index.name}`));
-      table.foreignKeys.sort((a, b) => position(table, a.columns[0]) - position(table, b.columns[0]));
+      table.indexes = table.indexes.filter(
+        (index) => !functional.has(`${table.name}.${index.name}`),
+      );
+      table.foreignKeys.sort(
+        (a, b) => position(table, a.columns[0]) - position(table, b.columns[0]),
+      );
     }
     return { tables: [...tables.values()] };
   } finally {

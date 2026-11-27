@@ -17,12 +17,18 @@ async function git(cwd: string, ...args: string[]): Promise<string> {
  * Commits the files, and only them, to the checked-out branch and pushes it. Returns false when
  * they have no change.
  */
-export async function commitFiles(cwd: string, files: string[], options: CommitOptions): Promise<boolean> {
+export async function commitFiles(
+  cwd: string,
+  files: string[],
+  options: CommitOptions,
+): Promise<boolean> {
   if ((await git(cwd, "status", "--porcelain", "--", ...files)) === "") return false;
   const branch = await git(cwd, "branch", "--show-current");
   if (branch === "") {
     throw new Error(
       "commit needs a branch, and HEAD is detached: check out the branch " +
+        // The workflow expression is the text to copy, not a placeholder.
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: shown to the user as is
         "(in a pull request, actions/checkout with ref: ${{ github.head_ref }})",
     );
   }
