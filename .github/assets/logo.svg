@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>erdraw</title>
+  <rect width="512" height="512" rx="0" fill="#0f110e"/>
+  <!-- parent table -->
+  <g>
+    <rect x="72" y="96" width="168" height="132" rx="14" fill="none" stroke="#7ae01e" stroke-width="16"/>
+    <rect x="72" y="96" width="168" height="44" rx="14" fill="#7ae01e"/>
+    <rect x="72" y="126" width="168" height="14" fill="#7ae01e"/>
+    <rect x="96" y="160" width="96" height="12" rx="6" fill="#7ae01e" opacity="0.55"/>
+    <rect x="96" y="190" width="64" height="12" rx="6" fill="#7ae01e" opacity="0.55"/>
+  </g>
+  <!-- child table -->
+  <g>
+    <rect x="272" y="284" width="168" height="132" rx="14" fill="none" stroke="#7ae01e" stroke-width="16"/>
+    <rect x="272" y="284" width="168" height="44" rx="14" fill="#7ae01e"/>
+    <rect x="272" y="314" width="168" height="14" fill="#7ae01e"/>
+    <rect x="296" y="348" width="96" height="12" rx="6" fill="#7ae01e" opacity="0.55"/>
+    <rect x="296" y="378" width="64" height="12" rx="6" fill="#7ae01e" opacity="0.55"/>
+  </g>
+  <!-- the relationship: one (bar) to many (crow's foot) -->
+  <path d="M156 236 V350 H252" fill="none" stroke="#f2f5ee" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M136 262 H176" stroke="#f2f5ee" stroke-width="12" stroke-linecap="round"/>
+  <path d="M226 350 L258 326 M226 350 L258 350 M226 350 L258 374" stroke="#f2f5ee" stroke-width="12" stroke-linecap="round"/>
+</svg>
