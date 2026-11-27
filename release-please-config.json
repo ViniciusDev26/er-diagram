@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": false,
+  "bootstrap-sha": "b4506be0497c2a6055c464f5dc3f97682678b0f9",
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "erdraw",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "perf", "section": "Performance" },
+        { "type": "docs", "section": "Documentation" }
+      ]
+    }
+  }
+}
