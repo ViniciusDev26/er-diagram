@@ -59,6 +59,7 @@ export async function readPostgres(connection: Connection, options: ReadOptions 
     database: connection.database,
     username: connection.user,
     password: connection.password,
+    ssl: connection.ssl ? "require" : false,
     max: 1,
     onnotice: () => {},
   });

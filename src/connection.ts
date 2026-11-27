@@ -5,6 +5,8 @@ export interface Connection {
   database: string;
   user: string;
   password: string;
+  /** Encrypt the connection (without verifying the server's certificate, like `sslmode=require`). */
+  ssl?: boolean;
 }
 
 export interface ReadOptions {

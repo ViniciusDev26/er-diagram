@@ -23,6 +23,7 @@ export async function readMysql(connection: Connection, options: ReadOptions = {
     database: connection.database,
     user: connection.user,
     password: connection.password,
+    ...(connection.ssl ? { ssl: { rejectUnauthorized: false } } : {}),
   });
   try {
     const query = async (text: string) =>
