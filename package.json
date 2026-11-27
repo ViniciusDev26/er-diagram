@@ -1,32 +1,38 @@
 {
-  "name": "generate-pg-diagram",
-  "version": "5.0.0",
-  "type": "module",
+  "name": "er-diagram",
+  "version": "4.0.0",
+  "private": true,
+  "description": "Draws the Mermaid ER diagram of a PostgreSQL or MySQL database",
   "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
-    "generate": "bun run src/generate-diagram.ts",
-    "test": "bun test",
-    "test:postgresql": "bun test tests/integration/postgresql.test.ts",
-    "test:mysql": "bun test tests/integration/mysql.test.ts",
-    "test:watch": "bun test --watch",
-    "semantic-release": "semantic-release",
-    "prepare": "husky"
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --format=cjs --legal-comments=none --outfile=dist/index.cjs",
+    "check": "biome check . && tsc --noEmit",
+    "test": "vitest run --coverage"
   },
   "dependencies": {
-    "mysql2": "^3.15.1",
-    "postgres": "^3.4.5",
-    "zod": "^4.1.11"
+    "@actions/core": "^3.0.1",
+    "mysql2": "^3.24.6",
+    "postgres": "^4.1.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.1.0",
-    "@commitlint/config-conventional": "^20.0.0",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/commit-analyzer": "^13.0.1",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^11.0.6",
-    "@semantic-release/release-notes-generator": "^14.1.0",
-    "@types/bun": "latest",
-    "husky": "^9.1.7",
-    "semantic-release": "^24.2.9"
+    "@biomejs/biome": "^2.6.9",
+    "@testcontainers/mysql": "^12.2.2",
+    "@testcontainers/postgresql": "^12.2.2",
+    "@types/node": "^26.6.11",
+    "@vitest/coverage-v8": "^5.1.2",
+    "esbuild": "^0.28.2",
+    "testcontainers": "^12.2.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.2"
+  },
+  "allowScripts": {
+    "cpu-features": false,
+    "esbuild": false,
+    "protobufjs": false,
+    "ssh2": false
   }
 }
