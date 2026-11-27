@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { run } from "./run.ts";
 
-await run({
+void run({
   cwd: process.cwd(),
   getInput: (name) => core.getInput(name),
   setOutput: (name, value) => core.setOutput(name, value),
