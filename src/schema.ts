@@ -7,16 +7,21 @@ export interface Column {
   nullable: boolean;
   /** The values of an enum column. */
   values?: string[];
+  /** The column's comment in the database (`COMMENT ON COLUMN`, `COMMENT '...'`). */
+  comment?: string;
 }
 
 export interface Index {
   name: string;
   columns: string[];
   unique: boolean;
+  /** Covers only some rows (`WHERE ...`): unique among them, so not a key of the table. */
+  partial?: boolean;
 }
 
 export interface ForeignKey {
   columns: string[];
+  /** The referenced table: qualified (`schema.table`) when it is not in the diagram. */
   references: { table: string; columns: string[] };
 }
 

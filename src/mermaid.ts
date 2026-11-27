@@ -1,4 +1,4 @@
-import type { Column, ForeignKey, Schema, Table } from "./schema.ts";
+import type { Column, ForeignKey, Index, Schema, Table } from "./schema.ts";
 
 export interface RenderOptions {
   /** Write each index as a comment on its first column. */
@@ -14,7 +14,10 @@ function attributeWord(text: string): string {
   return /^[A-Za-z_*]/.test(word) ? word : `_${word}`;
 }
 
-const quoted = (text: string) => `"${text.replaceAll('"', "'")}"`;
+const quoted = (text: string) => `"${text.replaceAll('"', "'").replace(/\s*\n\s*/g, " ")}"`;
+
+/** A key of the table: unique for every row. */
+const isKey = (index: Index) => index.unique && !index.partial;
 
 /**
  * The Mermaid id of each table. A name Mermaid cannot read is written as an id with the name as
@@ -47,7 +50,7 @@ function keys(table: Table, column: Column): string[] {
   const found: string[] = [];
   if (table.primaryKey.includes(column.name)) found.push("PK");
   if (table.foreignKeys.some((fk) => fk.columns.includes(column.name))) found.push("FK");
-  if (table.indexes.some((index) => index.unique && sameSet(index.columns, [column.name]))) {
+  if (table.indexes.some((index) => isKey(index) && sameSet(index.columns, [column.name]))) {
     found.push("UK");
   }
   return found;
@@ -55,17 +58,16 @@ function keys(table: Table, column: Column): string[] {
 
 function comment(table: Table, column: Column, options: RenderOptions): string[] {
   const parts: string[] = [];
+  if (column.comment) parts.push(column.comment);
   if (column.values) parts.push(column.values.join(", "));
   if (options.indexes) {
     for (const index of table.indexes) {
       if (index.columns[0] !== column.name) continue;
-      if (index.columns.length === 1) {
-        // A unique index on one column is already the column's UK.
-        if (!index.unique) parts.push(`index ${index.name}`);
-      } else {
-        const kind = index.unique ? "unique" : "index";
-        parts.push(`${kind} ${index.name} (${index.columns.join(", ")})`);
-      }
+      // A unique index on one column is already the column's UK.
+      if (index.columns.length === 1 && isKey(index)) continue;
+      const kind = `${index.partial ? "partial " : ""}${index.unique ? "unique" : "index"}`;
+      const columns = index.columns.length > 1 ? ` (${index.columns.join(", ")})` : "";
+      parts.push(`${kind} ${index.name}${columns}`);
     }
   }
   return parts;
@@ -90,7 +92,7 @@ function relationship(table: Table, fk: ForeignKey, ids: Map<string, string>): s
   const parent = columns.some((column) => column.nullable) ? "|o" : "||";
   const unique =
     sameSet(fk.columns, table.primaryKey) ||
-    table.indexes.some((index) => index.unique && sameSet(index.columns, fk.columns));
+    table.indexes.some((index) => isKey(index) && sameSet(index.columns, fk.columns));
   const child = unique ? "o|" : "o{";
   const line = fk.columns.every((name) => table.primaryKey.includes(name)) ? "--" : "..";
   const label = fk.columns.join(", ");
