@@ -1,4 +1,4 @@
-import type { Connection, ReadOptions } from "./connection.ts";
+import type { Connection, ReadOptions, SslMode } from "./connection.ts";
 
 export type DatabaseType = "postgresql" | "mysql";
 
@@ -15,6 +15,8 @@ export interface Config {
   output: string;
   readme?: string;
   indexes: boolean;
+  /** Only compare: fail when the files are not the diagram, and write nothing. */
+  check: boolean;
   commit?: CommitOptions;
 }
 
@@ -39,6 +41,16 @@ const SCHEMES: Record<string, DatabaseType> = {
   "postgres:": "postgresql",
   "postgresql:": "postgresql",
   "mysql:": "mysql",
+  "mariadb:": "mysql",
+};
+/** sslmode (PostgreSQL) and ssl-mode (MySQL) values; the others (disable, prefer) are no SSL. */
+const URL_SSL: Record<string, SslMode> = {
+  require: "require",
+  required: "require",
+  "verify-ca": "verify-ca",
+  verify_ca: "verify-ca",
+  "verify-full": "verify-full",
+  verify_identity: "verify-full",
 };
 const BOT = "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>";
 
@@ -60,7 +72,16 @@ function port(value: string, type: DatabaseType): number {
   return Number(value);
 }
 
-function fromUrl(text: string, ssl: boolean): { type: DatabaseType; connection: Connection } {
+/** The ssl input: undefined when not given, null for no SSL. */
+function sslInput(value: string): SslMode | null | undefined {
+  if (value === "") return undefined;
+  if (value === "false") return null;
+  if (value === "true") return "require";
+  if (value === "require" || value === "verify-ca" || value === "verify-full") return value;
+  throw new Error(`ssl must be true, false, require, verify-ca or verify-full, not '${value}'`);
+}
+
+function fromUrl(text: string): { type: DatabaseType; connection: Connection } {
   let url: URL;
   try {
     url = new URL(text);
@@ -68,8 +89,11 @@ function fromUrl(text: string, ssl: boolean): { type: DatabaseType; connection: 
     throw new Error("url is not a URL");
   }
   const type = SCHEMES[url.protocol];
-  if (!type) throw new Error("url must start with postgres://, postgresql:// or mysql://");
+  if (!type) {
+    throw new Error("url must start with postgres://, postgresql://, mysql:// or mariadb://");
+  }
   const mode = url.searchParams.get("sslmode") ?? url.searchParams.get("ssl-mode") ?? "";
+  const ssl = URL_SSL[mode.toLowerCase()];
   return {
     type,
     connection: {
@@ -78,16 +102,17 @@ function fromUrl(text: string, ssl: boolean): { type: DatabaseType; connection: 
       database: decodeURIComponent(url.pathname.slice(1)),
       user: decodeURIComponent(url.username),
       password: decodeURIComponent(url.password),
-      ssl: ssl || /^(require|verify|required)/i.test(mode),
+      ...(ssl ? { ssl } : {}),
     },
   };
 }
 
-function connect(get: (name: string) => string, ssl: boolean) {
-  const type = get("type") || "postgresql";
-  if (type !== "postgresql" && type !== "mysql") {
-    throw new Error(`type must be postgresql or mysql, not '${type}'`);
+function connect(get: (name: string) => string): { type: DatabaseType; connection: Connection } {
+  const given = get("type") || "postgresql";
+  if (given !== "postgresql" && given !== "mysql" && given !== "mariadb") {
+    throw new Error(`type must be postgresql, mysql or mariadb, not '${given}'`);
   }
+  const type = given === "mariadb" ? "mysql" : given;
   const required = (name: string) => {
     const value = get(name);
     if (value === "") throw new Error(`${name} is required (or a url)`);
@@ -101,9 +126,8 @@ function connect(get: (name: string) => string, ssl: boolean) {
       database: required("database"),
       user: required("user"),
       password: get("password"),
-      ssl,
     },
-  } as const;
+  };
 }
 
 function author(text: string): { name: string; email: string } {
@@ -114,23 +138,34 @@ function author(text: string): { name: string; email: string } {
 
 /** The action's configuration from its inputs (`get` returns "" for an input not given). */
 export function parseInputs(get: (name: string) => string): Config {
-  const ssl = flag("ssl", get("ssl"));
   const url = get("url");
-  const { type, connection } = url ? fromUrl(url, ssl) : connect(get, ssl);
+  const { type, connection } = url ? fromUrl(url) : connect(get);
+  const ca = get("ssl-ca");
+  if (ca) {
+    connection.ca = ca;
+    connection.ssl = "verify-full";
+  }
+  const ssl = sslInput(get("ssl"));
+  if (ssl === null) delete connection.ssl;
+  else if (ssl) connection.ssl = ssl;
   const commitAuthor = author(get("commit-author") || BOT);
+  const schemas = list(get("schemas"));
   const config: Config = {
     type,
     connection,
     read: {
-      schemas: list(get("schemas") || "public"),
+      schemas: schemas.length > 0 ? schemas : [type === "mysql" ? connection.database : "public"],
+      include: list(get("include")),
       exclude: [...DEFAULT_EXCLUDE, ...list(get("exclude"))],
     },
     output: get("output") || "docs/database.mmd",
     indexes: flag("indexes", get("indexes")),
+    check: flag("check", get("check")),
   };
   const readme = get("readme");
   if (readme) config.readme = readme;
   if (flag("commit", get("commit"))) {
+    if (config.check) throw new Error("check only reads: it cannot commit");
     config.commit = {
       message: get("commit-message") || "docs: update the database diagram",
       ...commitAuthor,
