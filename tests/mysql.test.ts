@@ -78,6 +78,11 @@ describe("readMysql", () => {
     ]);
   });
 
+  test("ssl encrypts the connection", async () => {
+    const schema = await readMysql({ ...connection, ssl: true }, { exclude: ["*"] });
+    expect(schema.tables).toEqual([]);
+  });
+
   test("a wrong password is an error", async () => {
     await expect(readMysql({ ...connection, password: "wrong" })).rejects.toThrow(/Access denied/);
   });

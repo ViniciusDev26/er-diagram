@@ -132,6 +132,11 @@ describe("readPostgres", () => {
     ]);
   });
 
+  test("ssl asks the server for an encrypted connection", async () => {
+    // The test server has no certificate: asking for SSL is what fails.
+    await expect(readPostgres({ ...connection, ssl: true })).rejects.toThrow(/SSL/);
+  });
+
   test("a wrong password is an error that names the database", async () => {
     await expect(readPostgres({ ...connection, password: "wrong" })).rejects.toThrow(/password/);
   });
