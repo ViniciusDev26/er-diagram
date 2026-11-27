@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import mysql from "mysql2/promise";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
+import mysql from "mysql2/promise";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { Connection } from "../src/connection.ts";
 import { readMysql } from "../src/mysql.ts";
@@ -20,7 +20,9 @@ beforeAll(async () => {
   };
   const fixture = readFileSync(new URL("fixtures/mysql.sql", import.meta.url), "utf8");
   const db = await mysql.createConnection({
-    ...connection,
+    host: connection.host,
+    port: connection.port,
+    database: connection.database,
     user: "root",
     password: container.getRootPassword(),
     multipleStatements: true,
@@ -58,7 +60,12 @@ describe("readMysql", () => {
       columns: [
         { name: "id", type: "int", nullable: false },
         { name: "email", type: "varchar(255)", nullable: false },
-        { name: "status", type: "enum", nullable: false, values: ["active", "inactive", "it's off"] },
+        {
+          name: "status",
+          type: "enum",
+          nullable: false,
+          values: ["active", "inactive", "it's off"],
+        },
         { name: "invited_by", type: "int", nullable: true },
         { name: "credit", type: "decimal(10,2) unsigned", nullable: false },
       ],
@@ -77,7 +84,10 @@ describe("readMysql", () => {
     expect(find(schema, "shipments")).toMatchObject({
       indexes: [{ name: "shipments_once", columns: ["order_id", "line"], unique: true }],
       foreignKeys: [
-        { columns: ["order_id", "line"], references: { table: "order_items", columns: ["order_id", "line"] } },
+        {
+          columns: ["order_id", "line"],
+          references: { table: "order_items", columns: ["order_id", "line"] },
+        },
       ],
     });
     expect(find(schema, "order_items")).toMatchObject({

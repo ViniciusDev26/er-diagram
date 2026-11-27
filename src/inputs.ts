@@ -131,7 +131,10 @@ export function parseInputs(get: (name: string) => string): Config {
   const readme = get("readme");
   if (readme) config.readme = readme;
   if (flag("commit", get("commit"))) {
-    config.commit = { message: get("commit-message") || "docs: update the database diagram", ...commitAuthor };
+    config.commit = {
+      message: get("commit-message") || "docs: update the database diagram",
+      ...commitAuthor,
+    };
   }
   return config;
 }

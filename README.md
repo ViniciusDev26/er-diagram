@@ -40,23 +40,23 @@ This connects to your database, extracts the schema, and writes a Mermaid ER dia
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `db-type` | Type of database (`postgresql` or `mysql`) | No | `postgresql` |
-| `db-host` | Host of the database | No | `localhost` |
-| `db-port` | Port of the database | No | `5432` |
-| `db-name` | Name of the database | Yes | - |
-| `db-user` | User of the database | Yes | - |
-| `db-pass` | Password of the database | Yes | - |
-| `output-dir` | Directory where the diagram will be saved | No | `docs` |
-| `write-to-readme` | Whether to write the diagram to the README file | No | `false` |
-| `readme-path` | Path to the README file | No | `README.md` |
-| `excluded-tables` | Comma-separated list of table names to exclude | No | `flyway_schema_history` |
-| `show-indexes` | Whether to show database indexes in the diagram | No | `true` |
-| `auto-commit` | Automatically commit and push changes to the repository | No | `false` |
-| `commit-message` | Commit message for auto-commit | No | `docs: update ER diagram [skip ci]` |
-| `commit-author-name` | Author name for the commit | No | `github-actions[bot]` |
-| `commit-author-email` | Author email for the commit | No | `41898282+github-actions[bot]@users.noreply.github.com` |
+| Input                 | Description                                             | Required | Default                                                 |
+| --------------------- | ------------------------------------------------------- | -------- | ------------------------------------------------------- |
+| `db-type`             | Type of database (`postgresql` or `mysql`)              | No       | `postgresql`                                            |
+| `db-host`             | Host of the database                                    | No       | `localhost`                                             |
+| `db-port`             | Port of the database                                    | No       | `5432`                                                  |
+| `db-name`             | Name of the database                                    | Yes      | -                                                       |
+| `db-user`             | User of the database                                    | Yes      | -                                                       |
+| `db-pass`             | Password of the database                                | Yes      | -                                                       |
+| `output-dir`          | Directory where the diagram will be saved               | No       | `docs`                                                  |
+| `write-to-readme`     | Whether to write the diagram to the README file         | No       | `false`                                                 |
+| `readme-path`         | Path to the README file                                 | No       | `README.md`                                             |
+| `excluded-tables`     | Comma-separated list of table names to exclude          | No       | `flyway_schema_history`                                 |
+| `show-indexes`        | Whether to show database indexes in the diagram         | No       | `true`                                                  |
+| `auto-commit`         | Automatically commit and push changes to the repository | No       | `false`                                                 |
+| `commit-message`      | Commit message for auto-commit                          | No       | `docs: update ER diagram [skip ci]`                     |
+| `commit-author-name`  | Author name for the commit                              | No       | `github-actions[bot]`                                   |
+| `commit-author-email` | Author email for the commit                             | No       | `41898282+github-actions[bot]@users.noreply.github.com` |
 
 ## Local Development
 

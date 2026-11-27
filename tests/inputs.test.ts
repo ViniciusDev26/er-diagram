@@ -7,7 +7,14 @@ describe("parseInputs", () => {
   test("defaults: postgresql on localhost, the public schema, docs/database.mmd, no README or commit", () => {
     expect(inputs({ database: "shop", user: "app", password: "secret" })).toEqual({
       type: "postgresql",
-      connection: { host: "localhost", port: 5432, database: "shop", user: "app", password: "secret", ssl: false },
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "shop",
+        user: "app",
+        password: "secret",
+        ssl: false,
+      },
       read: { schemas: ["public"], exclude: DEFAULT_EXCLUDE },
       output: "docs/database.mmd",
       indexes: false,

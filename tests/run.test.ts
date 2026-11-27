@@ -14,7 +14,17 @@ beforeAll(async () => {
   container = await new PostgreSqlContainer("postgres:17-alpine").start();
   url = container.getConnectionUri();
   const fixture = readFileSync(new URL("fixtures/postgres.sql", import.meta.url), "utf8");
-  const result = await container.exec(["psql", "-v", "ON_ERROR_STOP=1", "-U", container.getUsername(), "-d", container.getDatabase(), "-c", fixture]);
+  const result = await container.exec([
+    "psql",
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-U",
+    container.getUsername(),
+    "-d",
+    container.getDatabase(),
+    "-c",
+    fixture,
+  ]);
   expect(result.exitCode, result.output).toBe(0);
 });
 
@@ -28,7 +38,12 @@ beforeEach(() => {
 
 /** Runs the action with these inputs, and records what it says. */
 async function action(inputs: Record<string, string>) {
-  const said = { outputs: {} as Record<string, string>, info: [] as string[], warnings: [] as string[], failed: undefined as string | undefined };
+  const said = {
+    outputs: {} as Record<string, string>,
+    info: [] as string[],
+    warnings: [] as string[],
+    failed: undefined as string | undefined,
+  };
   const io: Io = {
     cwd,
     getInput: (name) => inputs[name] ?? "",
@@ -63,7 +78,9 @@ describe("run", () => {
     await action({ url, readme: "README.md", output: "schema.mmd", indexes: "true" });
     const readme = readFileSync(join(cwd, "README.md"), "utf8");
     expect(readme).toContain("## Database diagram");
-    expect(readme).toContain('integer user_id FK "index orders_by_user_and_status (user_id, status)"');
+    expect(readme).toContain(
+      'integer user_id FK "index orders_by_user_and_status (user_id, status)"',
+    );
 
     const again = await action({ url, readme: "README.md", output: "schema.mmd", indexes: "true" });
     expect(again.outputs.changed).toBe("false");
@@ -74,11 +91,28 @@ describe("run", () => {
     execFileSync("git", ["init", "--quiet", "--bare", "--initial-branch=main", remote]);
     execFileSync("git", ["init", "--quiet", "--initial-branch=main", cwd]);
     execFileSync("git", ["remote", "add", "origin", remote], { cwd });
-    execFileSync("git", ["-c", "user.name=x", "-c", "user.email=x@x", "commit", "--quiet", "--allow-empty", "-m", "init"], { cwd });
+    execFileSync(
+      "git",
+      [
+        "-c",
+        "user.name=x",
+        "-c",
+        "user.email=x@x",
+        "commit",
+        "--quiet",
+        "--allow-empty",
+        "-m",
+        "init",
+      ],
+      { cwd },
+    );
 
     const said = await action({ url, readme: "README.md", commit: "true" });
     expect(said.info).toContain("committed and pushed docs/database.mmd, README.md");
-    const log = execFileSync("git", ["log", "-1", "--format=%an %s", "main"], { cwd: remote, encoding: "utf8" });
+    const log = execFileSync("git", ["log", "-1", "--format=%an %s", "main"], {
+      cwd: remote,
+      encoding: "utf8",
+    });
     expect(log.trim()).toBe("github-actions[bot] docs: update the database diagram");
 
     const again = await action({ url, readme: "README.md", commit: "true" });
@@ -94,7 +128,13 @@ describe("run", () => {
   test("an error fails the action with its message", async () => {
     expect((await action({ database: "d" })).failed).toBe("user is required (or a url)");
     expect(existsSync(join(cwd, "docs"))).toBe(false);
-    const mysql = await action({ type: "mysql", host: "127.0.0.1", port: "1", database: "d", user: "u" });
+    const mysql = await action({
+      type: "mysql",
+      host: "127.0.0.1",
+      port: "1",
+      database: "d",
+      user: "u",
+    });
     expect(mysql.failed).toMatch(/ECONNREFUSED/);
   });
 });

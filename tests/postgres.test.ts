@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { readPostgres } from "../src/postgres.ts";
 import type { Connection } from "../src/connection.ts";
+import { readPostgres } from "../src/postgres.ts";
 import type { Schema, Table } from "../src/schema.ts";
 
 let container: StartedPostgreSqlContainer;
@@ -18,7 +18,17 @@ beforeAll(async () => {
     password: container.getPassword(),
   };
   const fixture = readFileSync(new URL("fixtures/postgres.sql", import.meta.url), "utf8");
-  const result = await container.exec(["psql", "-v", "ON_ERROR_STOP=1", "-U", connection.user, "-d", connection.database, "-c", fixture]);
+  const result = await container.exec([
+    "psql",
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-U",
+    connection.user,
+    "-d",
+    connection.database,
+    "-c",
+    fixture,
+  ]);
   expect(result.exitCode, result.output).toBe(0);
 });
 
@@ -78,7 +88,11 @@ describe("readPostgres", () => {
         { name: "shipped_at", type: "timestamp", nullable: true },
       ],
       indexes: [
-        { name: "shipments_order_id_product_id_key", columns: ["order_id", "product_id"], unique: true },
+        {
+          name: "shipments_order_id_product_id_key",
+          columns: ["order_id", "product_id"],
+          unique: true,
+        },
       ],
       foreignKeys: [
         {
@@ -97,8 +111,16 @@ describe("readPostgres", () => {
     expect(find(schema, "orders")?.indexes).toEqual([
       { name: "orders_by_user_and_status", columns: ["user_id", "status"], unique: false },
     ]);
-    expect(find(schema, "profiles")?.columns[2]).toEqual({ name: "tags", type: "text[]", nullable: true });
-    expect(find(schema, "products")?.columns[2]).toEqual({ name: "price", type: "numeric(10,2)", nullable: false });
+    expect(find(schema, "profiles")?.columns[2]).toEqual({
+      name: "tags",
+      type: "text[]",
+      nullable: true,
+    });
+    expect(find(schema, "products")?.columns[2]).toEqual({
+      name: "price",
+      type: "numeric(10,2)",
+      nullable: false,
+    });
   });
 
   test("qualifies the names when it reads several schemas", async () => {

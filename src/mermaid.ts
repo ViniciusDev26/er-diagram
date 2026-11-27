@@ -1,4 +1,4 @@
-import type { Column, ForeignKey, Table, Schema } from "./schema.ts";
+import type { Column, ForeignKey, Schema, Table } from "./schema.ts";
 
 export interface RenderOptions {
   /** Write each index as a comment on its first column. */

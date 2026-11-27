@@ -48,5 +48,7 @@ test("mermaid reads what render writes, odd names and all", async () => {
 });
 
 test("the check rejects what mermaid cannot read", async () => {
-  await expect(expectValidMermaid("erDiagram\n    t {\n        a b c d e\n    }\n")).rejects.toThrow();
+  await expect(
+    expectValidMermaid("erDiagram\n    t {\n        a b c d e\n    }\n"),
+  ).rejects.toThrow();
 });

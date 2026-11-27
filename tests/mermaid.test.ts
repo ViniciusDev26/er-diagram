@@ -69,9 +69,7 @@ describe("render", () => {
         ...extra,
       });
     const relationship = (child: Table) =>
-      lines(render({ tables: [table("parent"), child] })).find((line) =>
-        line.includes(" : "),
-      );
+      lines(render({ tables: [table("parent"), child] })).find((line) => line.includes(" : "));
 
     test("a required foreign key is exactly one parent for zero or more children", () => {
       expect(relationship(child(["a"]))).toBe("    parent ||..o{ child : a");

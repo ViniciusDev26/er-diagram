@@ -62,6 +62,8 @@ describe("commitFiles", () => {
   test("a failed push says what git said", async () => {
     git(work, "remote", "set-url", "origin", join(work, "missing.git"));
     writeFileSync(join(work, "diagram.mmd"), "erDiagram\n");
-    await expect(commitFiles(work, ["diagram.mmd"], author)).rejects.toThrow(/git push failed:.*missing\.git/s);
+    await expect(commitFiles(work, ["diagram.mmd"], author)).rejects.toThrow(
+      /git push failed:.*missing\.git/s,
+    );
   });
 });
