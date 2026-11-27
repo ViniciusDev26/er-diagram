@@ -1,7 +1,14 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "includes": ["**", "!dist", "!coverage", "!**/*.md"]
+    "includes": [
+      "**",
+      "!dist",
+      "!coverage",
+      "!**/*.md",
+      "!.release-please-manifest.json",
+      "!CHANGELOG.md"
+    ]
   },
   "formatter": {
     "indentStyle": "space",

@@ -66,7 +66,8 @@ erDiagram
     coupons |o..o{ orders : coupon_code
     users ||--o| profiles : user_id
     order_items ||..o| shipments : "order_id, product_id"
-    users |o..o{ users : invited_by```
+    users |o..o{ users : invited_by
+```
 
 <sub>The example schema of the tests, drawn by erdraw: [`tests/fixtures/postgres.sql`](tests/fixtures/postgres.sql).</sub>
 
