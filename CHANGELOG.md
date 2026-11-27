@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.1.1](https://github.com/sugomi-dev/erdraw/compare/v5.1.0...v5.1.1) (2026-11-27)
+
+
+### chore
+
+* release 5.1.1 ([#10](https://github.com/sugomi-dev/erdraw/issues/10)) ([f8416d8](https://github.com/sugomi-dev/erdraw/commit/f8416d8ab629553d8899c185e8d8e74664951913))
+
 ## [5.1.0](https://github.com/sugomi-dev/erdraw/compare/v5.0.0...v5.1.0) (2026-11-27)
 
 
