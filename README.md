@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/assets/banner.png" alt="erdraw: the ER diagram of your database, always current" width="100%">
+</p>
+
 # erdraw
 
 **Draws the ER diagram of your PostgreSQL or MySQL database, in Mermaid, into your docs.** Run it
@@ -200,4 +204,4 @@ change to the diagram. Rules for contributors are in [`CLAUDE.md`](CLAUDE.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). erdraw is a [sugomi](https://github.com/sugomi-dev) tool.
