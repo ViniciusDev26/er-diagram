@@ -22,11 +22,16 @@ CREATE TABLE orders (
     INDEX orders_by_user_and_date (user_id, created_at)
 );
 
+CREATE TABLE products (code VARCHAR(20) PRIMARY KEY);
+
+-- Foreign keys come in column order, whatever their names.
 CREATE TABLE order_items (
     order_id INT NOT NULL,
     line INT NOT NULL,
+    product_code VARCHAR(20) NOT NULL,
     PRIMARY KEY (order_id, line),
-    FOREIGN KEY (order_id) REFERENCES orders(id)
+    CONSTRAINT a_product FOREIGN KEY (product_code) REFERENCES products(code),
+    CONSTRAINT b_order FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 
 CREATE TABLE shipments (
@@ -40,5 +45,8 @@ CREATE TABLE shipments (
 -- A functional index has no column to show.
 CREATE INDEX users_by_lower_email ON users ((lower(email)));
 
-CREATE TABLE flyway_schema_history (installed_rank INT PRIMARY KEY);
+CREATE TABLE flyway_schema_history (installed_rank INT PRIMARY KEY, version VARCHAR(50), INDEX (version));
+
+-- A foreign key to another database is not part of this one's diagram.
+CREATE TABLE wallets (id INT PRIMARY KEY, account_id INT, FOREIGN KEY (account_id) REFERENCES other.accounts(id));
 CREATE VIEW big_orders AS SELECT * FROM orders;

@@ -19,7 +19,13 @@ beforeAll(async () => {
     password: container.getUserPassword(),
   };
   const fixture = readFileSync(new URL("fixtures/mysql.sql", import.meta.url), "utf8");
-  const db = await mysql.createConnection({ ...connection, multipleStatements: true });
+  const db = await mysql.createConnection({
+    ...connection,
+    user: "root",
+    password: container.getRootPassword(),
+    multipleStatements: true,
+  });
+  await db.query("CREATE DATABASE other; CREATE TABLE other.accounts (id INT PRIMARY KEY);");
   await db.query(fixture);
   await db.end();
 });
@@ -37,9 +43,11 @@ describe("readMysql", () => {
     expect(schema.tables.map((table) => table.name)).toEqual([
       "order_items",
       "orders",
+      "products",
       "profiles",
       "shipments",
       "users",
+      "wallets",
     ]);
   });
 
@@ -72,10 +80,22 @@ describe("readMysql", () => {
         { columns: ["order_id", "line"], references: { table: "order_items", columns: ["order_id", "line"] } },
       ],
     });
-    expect(find(schema, "order_items")?.primaryKey).toEqual(["order_id", "line"]);
+    expect(find(schema, "order_items")).toMatchObject({
+      primaryKey: ["order_id", "line"],
+      foreignKeys: [
+        { columns: ["order_id"], references: { table: "orders", columns: ["id"] } },
+        { columns: ["product_code"], references: { table: "products", columns: ["code"] } },
+      ],
+    });
+    expect(find(schema, "wallets")?.foreignKeys).toEqual([]);
     expect(find(schema, "orders")?.indexes).toEqual([
       { name: "orders_by_user_and_date", columns: ["user_id", "created_at"], unique: false },
     ]);
+  });
+
+  test("a foreign key to an excluded table is left out", async () => {
+    const schema = await readMysql(connection, { exclude: ["users"] });
+    expect(find(schema, "profiles")?.foreignKeys).toEqual([]);
   });
 
   test("ssl encrypts the connection", async () => {
