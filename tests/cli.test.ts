@@ -90,6 +90,13 @@ test("warnings say so, and --ssl-ca reads a file", async () => {
   expect(bad.code).toBe(1);
 });
 
+test("without --url or DATABASE_URL, the connection is the options", async () => {
+  expect(await erdraw([])).toMatchObject({
+    code: 1,
+    stderr: "erdraw: database is required (or a url)\n",
+  });
+});
+
 test("a wrong option is a usage error", async () => {
   const said = await erdraw(["--colour"]);
   expect(said.code).toBe(2);
