@@ -10910,7 +10910,7 @@ var require_mock_utils = __commonJS({
       const url = new URL(origin);
       if (netConnect === true) {
         return true;
-      } else if (Array.isArray(netConnect) && netConnect.some((matcher) => matchValue(matcher, url.host))) {
+      } else if (Array.isArray(netConnect) && netConnect.some((matcher2) => matchValue(matcher2, url.host))) {
         return true;
       }
       return false;
@@ -11340,14 +11340,14 @@ var require_mock_agent = __commonJS({
       activate() {
         this[kIsMockActive] = true;
       }
-      enableNetConnect(matcher) {
-        if (typeof matcher === "string" || typeof matcher === "function" || matcher instanceof RegExp) {
+      enableNetConnect(matcher2) {
+        if (typeof matcher2 === "string" || typeof matcher2 === "function" || matcher2 instanceof RegExp) {
           if (Array.isArray(this[kNetConnect])) {
-            this[kNetConnect].push(matcher);
+            this[kNetConnect].push(matcher2);
           } else {
-            this[kNetConnect] = [matcher];
+            this[kNetConnect] = [matcher2];
           }
-        } else if (typeof matcher === "undefined") {
+        } else if (typeof matcher2 === "undefined") {
           this[kNetConnect] = true;
         } else {
           throw new InvalidArgumentError("Unsupported matcher. Must be one of String|Function|RegExp.");
@@ -35850,11 +35850,11 @@ var require_connection_config = __commonJS({
         if (!SSLProfiles) {
           SSLProfiles = require_ssl_profiles();
         }
-        const ssl = SSLProfiles[name];
-        if (ssl === void 0) {
+        const ssl2 = SSLProfiles[name];
+        if (ssl2 === void 0) {
           throw new TypeError(`Unknown SSL profile '${name}'`);
         }
-        return ssl;
+        return ssl2;
       }
       static parseUrl(url) {
         const parsedUrl = new URL2(url);
@@ -37345,24 +37345,24 @@ var require_tls_session_cache = __commonJS({
     var { createLRU } = require_lib2();
     var MAX_PEERS_PER_SSL_CONFIG = 100;
     var caches = /* @__PURE__ */ new WeakMap();
-    function snapshotMaterial(ssl) {
+    function snapshotMaterial(ssl2) {
       return {
-        ca: ssl.ca,
-        cert: ssl.cert,
-        ciphers: ssl.ciphers,
-        key: ssl.key,
-        passphrase: ssl.passphrase,
-        minVersion: ssl.minVersion,
-        maxVersion: ssl.maxVersion
+        ca: ssl2.ca,
+        cert: ssl2.cert,
+        ciphers: ssl2.ciphers,
+        key: ssl2.key,
+        passphrase: ssl2.passphrase,
+        minVersion: ssl2.minVersion,
+        maxVersion: ssl2.maxVersion
       };
     }
     function sameMaterial(a, b) {
       return a.ca === b.ca && a.cert === b.cert && a.ciphers === b.ciphers && a.key === b.key && a.passphrase === b.passphrase && a.minVersion === b.minVersion && a.maxVersion === b.maxVersion;
     }
     var TlsSessionSlot = class {
-      constructor(ssl, host, port2, rejectUnauthorized, verifyIdentity) {
-        this.ssl = ssl;
-        this.material = snapshotMaterial(ssl);
+      constructor(ssl2, host, port2, rejectUnauthorized, verifyIdentity) {
+        this.ssl = ssl2;
+        this.material = snapshotMaterial(ssl2);
         this.key = `${host}:${port2}:${Boolean(rejectUnauthorized)}:${Boolean(verifyIdentity)}`;
       }
       _sessions() {
@@ -37650,29 +37650,29 @@ var require_connection2 = __commonJS({
     var _connectionId = 0;
     var convertNamedPlaceholders = null;
     var secureContexts = /* @__PURE__ */ new WeakMap();
-    function getSecureContext(ssl) {
-      const cached = secureContexts.get(ssl);
-      if (cached !== void 0 && cached.ca === ssl.ca && cached.cert === ssl.cert && cached.ciphers === ssl.ciphers && cached.key === ssl.key && cached.passphrase === ssl.passphrase && cached.minVersion === ssl.minVersion && cached.maxVersion === ssl.maxVersion) {
+    function getSecureContext(ssl2) {
+      const cached = secureContexts.get(ssl2);
+      if (cached !== void 0 && cached.ca === ssl2.ca && cached.cert === ssl2.cert && cached.ciphers === ssl2.ciphers && cached.key === ssl2.key && cached.passphrase === ssl2.passphrase && cached.minVersion === ssl2.minVersion && cached.maxVersion === ssl2.maxVersion) {
         return cached.secureContext;
       }
       const secureContext = Tls.createSecureContext({
-        ca: ssl.ca,
-        cert: ssl.cert,
-        ciphers: ssl.ciphers,
-        key: ssl.key,
-        passphrase: ssl.passphrase,
-        minVersion: ssl.minVersion,
-        maxVersion: ssl.maxVersion
+        ca: ssl2.ca,
+        cert: ssl2.cert,
+        ciphers: ssl2.ciphers,
+        key: ssl2.key,
+        passphrase: ssl2.passphrase,
+        minVersion: ssl2.minVersion,
+        maxVersion: ssl2.maxVersion
       });
-      secureContexts.set(ssl, {
+      secureContexts.set(ssl2, {
         secureContext,
-        ca: ssl.ca,
-        cert: ssl.cert,
-        ciphers: ssl.ciphers,
-        key: ssl.key,
-        passphrase: ssl.passphrase,
-        minVersion: ssl.minVersion,
-        maxVersion: ssl.maxVersion
+        ca: ssl2.ca,
+        cert: ssl2.cert,
+        ciphers: ssl2.ciphers,
+        key: ssl2.key,
+        passphrase: ssl2.passphrase,
+        minVersion: ssl2.minVersion,
+        maxVersion: ssl2.maxVersion
       });
       return secureContext;
     }
@@ -40564,6 +40564,9 @@ var ExitCode;
   ExitCode2[ExitCode2["Success"] = 0] = "Success";
   ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
 })(ExitCode || (ExitCode = {}));
+function setSecret(secret) {
+  issueCommand("add-mask", {}, secret);
+}
 function getInput(name, options) {
   const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
   if (options && options.required && !val) {
@@ -40634,8 +40637,17 @@ async function commitFiles(cwd, files, options) {
     "--",
     ...files
   );
-  await git(cwd, "push", "--quiet", "origin", `HEAD:refs/heads/${branch}`);
-  return true;
+  for (let attempt2 = 1; ; attempt2++) {
+    try {
+      await git(cwd, "push", "--quiet", "origin", `HEAD:refs/heads/${branch}`);
+      return true;
+    } catch (error3) {
+      if (attempt2 === 3) throw error3;
+      await git(cwd, "pull", "--quiet", "--rebase", "--autostash", "origin", branch).catch(() => {
+        throw error3;
+      });
+    }
+  }
 }
 
 // src/inputs.ts
@@ -40657,7 +40669,16 @@ var PORTS = { postgresql: 5432, mysql: 3306 };
 var SCHEMES = {
   "postgres:": "postgresql",
   "postgresql:": "postgresql",
-  "mysql:": "mysql"
+  "mysql:": "mysql",
+  "mariadb:": "mysql"
+};
+var URL_SSL = {
+  require: "require",
+  required: "require",
+  "verify-ca": "verify-ca",
+  verify_ca: "verify-ca",
+  "verify-full": "verify-full",
+  verify_identity: "verify-full"
 };
 var BOT = "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>";
 var list = (text3) => text3.split(",").map((item) => item.trim()).filter((item) => item !== "");
@@ -40671,7 +40692,14 @@ function port(value2, type) {
   if (!/^\d+$/.test(value2)) throw new Error(`port must be a number, not '${value2}'`);
   return Number(value2);
 }
-function fromUrl(text3, ssl) {
+function sslInput(value2) {
+  if (value2 === "") return void 0;
+  if (value2 === "false") return null;
+  if (value2 === "true") return "require";
+  if (value2 === "require" || value2 === "verify-ca" || value2 === "verify-full") return value2;
+  throw new Error(`ssl must be true, false, require, verify-ca or verify-full, not '${value2}'`);
+}
+function fromUrl(text3) {
   let url;
   try {
     url = new URL(text3);
@@ -40679,8 +40707,11 @@ function fromUrl(text3, ssl) {
     throw new Error("url is not a URL");
   }
   const type = SCHEMES[url.protocol];
-  if (!type) throw new Error("url must start with postgres://, postgresql:// or mysql://");
+  if (!type) {
+    throw new Error("url must start with postgres://, postgresql://, mysql:// or mariadb://");
+  }
   const mode = url.searchParams.get("sslmode") ?? url.searchParams.get("ssl-mode") ?? "";
+  const ssl2 = URL_SSL[mode.toLowerCase()];
   return {
     type,
     connection: {
@@ -40689,15 +40720,16 @@ function fromUrl(text3, ssl) {
       database: decodeURIComponent(url.pathname.slice(1)),
       user: decodeURIComponent(url.username),
       password: decodeURIComponent(url.password),
-      ssl: ssl || /^(require|verify|required)/i.test(mode)
+      ...ssl2 ? { ssl: ssl2 } : {}
     }
   };
 }
-function connect(get, ssl) {
-  const type = get("type") || "postgresql";
-  if (type !== "postgresql" && type !== "mysql") {
-    throw new Error(`type must be postgresql or mysql, not '${type}'`);
+function connect(get) {
+  const given = get("type") || "postgresql";
+  if (given !== "postgresql" && given !== "mysql" && given !== "mariadb") {
+    throw new Error(`type must be postgresql, mysql or mariadb, not '${given}'`);
   }
+  const type = given === "mariadb" ? "mysql" : given;
   const required = (name) => {
     const value2 = get(name);
     if (value2 === "") throw new Error(`${name} is required (or a url)`);
@@ -40710,8 +40742,7 @@ function connect(get, ssl) {
       port: port(get("port"), type),
       database: required("database"),
       user: required("user"),
-      password: get("password"),
-      ssl
+      password: get("password")
     }
   };
 }
@@ -40721,23 +40752,34 @@ function author(text3) {
   return { name: match[1], email: match[2] };
 }
 function parseInputs(get) {
-  const ssl = flag("ssl", get("ssl"));
   const url = get("url");
-  const { type, connection: connection2 } = url ? fromUrl(url, ssl) : connect(get, ssl);
+  const { type, connection: connection2 } = url ? fromUrl(url) : connect(get);
+  const ca = get("ssl-ca");
+  if (ca) {
+    connection2.ca = ca;
+    connection2.ssl = "verify-full";
+  }
+  const ssl2 = sslInput(get("ssl"));
+  if (ssl2 === null) delete connection2.ssl;
+  else if (ssl2) connection2.ssl = ssl2;
   const commitAuthor = author(get("commit-author") || BOT);
+  const schemas = list(get("schemas"));
   const config = {
     type,
     connection: connection2,
     read: {
-      schemas: list(get("schemas") || "public"),
+      schemas: schemas.length > 0 ? schemas : [type === "mysql" ? connection2.database : "public"],
+      include: list(get("include")),
       exclude: [...DEFAULT_EXCLUDE, ...list(get("exclude"))]
     },
     output: get("output") || "docs/database.mmd",
-    indexes: flag("indexes", get("indexes"))
+    indexes: flag("indexes", get("indexes")),
+    check: flag("check", get("check"))
   };
   const readme = get("readme");
   if (readme) config.readme = readme;
   if (flag("commit", get("commit"))) {
+    if (config.check) throw new Error("check only reads: it cannot commit");
     config.commit = {
       message: get("commit-message") || "docs: update the database diagram",
       ...commitAuthor
@@ -40752,7 +40794,8 @@ function attributeWord(text3) {
   const word = text3.replace(/[^A-Za-z0-9_()[\]-]/g, "_");
   return /^[A-Za-z_*]/.test(word) ? word : `_${word}`;
 }
-var quoted = (text3) => `"${text3.replaceAll('"', "'")}"`;
+var quoted = (text3) => `"${text3.replaceAll('"', "'").replace(/\s*\n\s*/g, " ")}"`;
+var isKey = (index) => index.unique && !index.partial;
 function entityIds(tables) {
   const ids2 = /* @__PURE__ */ new Map();
   const taken = /* @__PURE__ */ new Set();
@@ -40777,23 +40820,22 @@ function keys(table, column2) {
   const found = [];
   if (table.primaryKey.includes(column2.name)) found.push("PK");
   if (table.foreignKeys.some((fk) => fk.columns.includes(column2.name))) found.push("FK");
-  if (table.indexes.some((index) => index.unique && sameSet(index.columns, [column2.name]))) {
+  if (table.indexes.some((index) => isKey(index) && sameSet(index.columns, [column2.name]))) {
     found.push("UK");
   }
   return found;
 }
 function comment(table, column2, options) {
   const parts2 = [];
+  if (column2.comment) parts2.push(column2.comment);
   if (column2.values) parts2.push(column2.values.join(", "));
   if (options.indexes) {
     for (const index of table.indexes) {
       if (index.columns[0] !== column2.name) continue;
-      if (index.columns.length === 1) {
-        if (!index.unique) parts2.push(`index ${index.name}`);
-      } else {
-        const kind = index.unique ? "unique" : "index";
-        parts2.push(`${kind} ${index.name} (${index.columns.join(", ")})`);
-      }
+      if (index.columns.length === 1 && isKey(index)) continue;
+      const kind = `${index.partial ? "partial " : ""}${index.unique ? "unique" : "index"}`;
+      const columns2 = index.columns.length > 1 ? ` (${index.columns.join(", ")})` : "";
+      parts2.push(`${kind} ${index.name}${columns2}`);
     }
   }
   return parts2;
@@ -40809,7 +40851,7 @@ function attribute(table, column2, options) {
 function relationship(table, fk, ids2) {
   const columns2 = table.columns.filter((column2) => fk.columns.includes(column2.name));
   const parent = columns2.some((column2) => column2.nullable) ? "|o" : "||";
-  const unique = sameSet(fk.columns, table.primaryKey) || table.indexes.some((index) => index.unique && sameSet(index.columns, fk.columns));
+  const unique = sameSet(fk.columns, table.primaryKey) || table.indexes.some((index) => isKey(index) && sameSet(index.columns, fk.columns));
   const child = unique ? "o|" : "o{";
   const line = fk.columns.every((name) => table.primaryKey.includes(name)) ? "--" : "..";
   const label = fk.columns.join(", ");
@@ -40840,12 +40882,17 @@ function render(schema, options = {}) {
 var import_promise = __toESM(require_promise(), 1);
 
 // src/exclude.ts
-function excluder(patterns = []) {
+var matcher = (patterns) => {
   const regexes = patterns.map((pattern) => {
     const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*");
     return new RegExp(`^${escaped}$`);
   });
   return (name, qualified) => regexes.some((regex) => regex.test(name) || regex.test(qualified));
+};
+function tableFilter(include = [], exclude = []) {
+  const included = matcher(include);
+  const excluded = matcher(exclude);
+  return (name, qualified) => (include.length === 0 || included(name, qualified)) && !excluded(name, qualified);
 }
 
 // src/mysql.ts
@@ -40855,64 +40902,94 @@ function enumValues(columnType) {
     ([, value2]) => value2.replaceAll("''", "'").replace(/\\(.)/g, "$1")
   );
 }
+var shortType = (type) => type.replace(/^((?:tiny|small|medium|big)?int)\(\d+\)/, "$1");
+function ssl(connection2) {
+  if (connection2.ssl === void 0) return void 0;
+  if (connection2.ssl === "require") return { rejectUnauthorized: false };
+  return {
+    rejectUnauthorized: true,
+    verifyIdentity: connection2.ssl === "verify-full",
+    ...connection2.ca ? { ca: connection2.ca } : {}
+  };
+}
 async function readMysql(connection2, options = {}) {
-  const isExcluded = excluder(options.exclude);
+  const databases = options.schemas ?? [connection2.database];
+  const qualify = databases.length > 1;
+  const isDrawn = tableFilter(options.include, options.exclude);
+  const tls2 = ssl(connection2);
   const db = await import_promise.default.createConnection({
     host: connection2.host,
     port: connection2.port,
     database: connection2.database,
     user: connection2.user,
     password: connection2.password,
-    ...connection2.ssl ? { ssl: { rejectUnauthorized: false } } : {}
+    ...tls2 ? { ssl: tls2 } : {}
   });
   try {
-    const query2 = async (text3) => (await db.query(text3, [connection2.database]))[0];
+    const query2 = async (text3) => (await db.query(text3, [databases]))[0];
     const [tableRows, columnRows, keyRows, indexRows] = await Promise.all([
-      query2(`SELECT TABLE_NAME AS name FROM information_schema.TABLES
-             WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME`),
-      query2(`SELECT TABLE_NAME AS tbl, COLUMN_NAME AS name, COLUMN_TYPE AS type, DATA_TYPE AS data,
-                    IS_NULLABLE = 'YES' AS nullable
-             FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? ORDER BY ORDINAL_POSITION`),
-      query2(`SELECT k.TABLE_NAME AS tbl, k.CONSTRAINT_NAME AS name, c.CONSTRAINT_TYPE AS kind,
-                    k.COLUMN_NAME AS col, k.REFERENCED_TABLE_SCHEMA AS refSchema,
-                    k.REFERENCED_TABLE_NAME AS refTable, k.REFERENCED_COLUMN_NAME AS refCol
+      query2(`SELECT TABLE_SCHEMA AS db, TABLE_NAME AS name FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA IN (?) AND TABLE_TYPE = 'BASE TABLE'`),
+      query2(`SELECT TABLE_SCHEMA AS db, TABLE_NAME AS tbl, COLUMN_NAME AS name,
+                    COLUMN_TYPE AS type, DATA_TYPE AS data, IS_NULLABLE = 'YES' AS nullable,
+                    COLUMN_COMMENT AS comment
+             FROM information_schema.COLUMNS WHERE TABLE_SCHEMA IN (?)
+             ORDER BY ORDINAL_POSITION`),
+      query2(`SELECT k.TABLE_SCHEMA AS db, k.TABLE_NAME AS tbl, k.CONSTRAINT_NAME AS name,
+                    c.CONSTRAINT_TYPE AS kind, k.COLUMN_NAME AS col,
+                    k.REFERENCED_TABLE_SCHEMA AS refDb, k.REFERENCED_TABLE_NAME AS refTable,
+                    k.REFERENCED_COLUMN_NAME AS refCol
              FROM information_schema.KEY_COLUMN_USAGE k
              JOIN information_schema.TABLE_CONSTRAINTS c
                ON c.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND c.TABLE_NAME = k.TABLE_NAME
               AND c.CONSTRAINT_NAME = k.CONSTRAINT_NAME
-             WHERE k.TABLE_SCHEMA = ? AND c.CONSTRAINT_TYPE IN ('PRIMARY KEY', 'FOREIGN KEY')
-             ORDER BY k.TABLE_NAME, k.CONSTRAINT_NAME, k.ORDINAL_POSITION`),
-      query2(`SELECT TABLE_NAME AS tbl, INDEX_NAME AS name, NON_UNIQUE = 0 AS isUnique,
-                    COLUMN_NAME AS col
+             WHERE k.TABLE_SCHEMA IN (?) AND c.CONSTRAINT_TYPE IN ('PRIMARY KEY', 'FOREIGN KEY')
+             ORDER BY k.TABLE_SCHEMA, k.TABLE_NAME, k.CONSTRAINT_NAME, k.ORDINAL_POSITION`),
+      query2(`SELECT TABLE_SCHEMA AS db, TABLE_NAME AS tbl, INDEX_NAME AS name,
+                    NON_UNIQUE = 0 AS isUnique, COLUMN_NAME AS col
              FROM information_schema.STATISTICS
-             WHERE TABLE_SCHEMA = ? AND INDEX_NAME <> 'PRIMARY'
-             ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX`)
+             WHERE TABLE_SCHEMA IN (?) AND INDEX_NAME <> 'PRIMARY'
+             ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX`)
     ]);
+    const name = (db2, table) => qualify ? `${db2}.${table}` : table;
     const tables = /* @__PURE__ */ new Map();
-    for (const { name } of tableRows) {
-      if (isExcluded(name, `${connection2.database}.${name}`)) continue;
-      tables.set(name, { name, columns: [], primaryKey: [], indexes: [], foreignKeys: [] });
+    for (const row of tableRows) {
+      if (!isDrawn(row.name, `${row.db}.${row.name}`)) continue;
+      tables.set(`${row.db}.${row.name}`, {
+        name: name(row.db, row.name),
+        columns: [],
+        primaryKey: [],
+        indexes: [],
+        foreignKeys: []
+      });
     }
     for (const row of columnRows) {
-      const column2 = { name: row.name, type: row.type, nullable: row.nullable === 1 };
+      const column2 = {
+        name: row.name,
+        type: shortType(row.type),
+        nullable: row.nullable === 1
+      };
       if (row.data === "enum" || row.data === "set") {
         column2.type = row.data;
         column2.values = enumValues(row.type);
       }
-      tables.get(row.tbl)?.columns.push(column2);
+      if (row.comment) column2.comment = row.comment;
+      tables.get(`${row.db}.${row.tbl}`)?.columns.push(column2);
     }
     let last = "";
     for (const row of keyRows) {
-      const table = tables.get(row.tbl);
+      const table = tables.get(`${row.db}.${row.tbl}`);
       if (!table) continue;
       if (row.kind === "PRIMARY KEY") {
         table.primaryKey.push(row.col);
         continue;
       }
-      if (row.refSchema !== connection2.database || !tables.has(row.refTable)) continue;
-      const key2 = `${row.tbl}.${row.name}`;
-      if (key2 !== last)
-        table.foreignKeys.push({ columns: [], references: { table: row.refTable, columns: [] } });
+      const key2 = `${row.db}.${row.tbl}.${row.name}`;
+      if (key2 !== last) {
+        const referenced = `${row.refDb}.${row.refTable}`;
+        const references = tables.has(referenced) ? name(row.refDb, row.refTable) : referenced;
+        table.foreignKeys.push({ columns: [], references: { table: references, columns: [] } });
+      }
       last = key2;
       const fk = table.foreignKeys.at(-1);
       fk.columns.push(row.col);
@@ -40921,24 +40998,23 @@ async function readMysql(connection2, options = {}) {
     const functional = /* @__PURE__ */ new Set();
     last = "";
     for (const row of indexRows) {
-      const table = tables.get(row.tbl);
+      const table = tables.get(`${row.db}.${row.tbl}`);
       if (!table) continue;
-      const key2 = `${row.tbl}.${row.name}`;
-      if (row.col === null) functional.add(key2);
+      const key2 = `${row.db}.${row.tbl}.${row.name}`;
       if (key2 !== last)
         table.indexes.push({ name: row.name, columns: [], unique: row.isUnique === 1 });
       last = key2;
-      table.indexes.at(-1).columns.push(row.col);
+      const index = table.indexes.at(-1);
+      if (row.col === null) functional.add(index);
+      index.columns.push(row.col);
     }
     for (const table of tables.values()) {
-      table.indexes = table.indexes.filter(
-        (index) => !functional.has(`${table.name}.${index.name}`)
-      );
+      table.indexes = table.indexes.filter((index) => !functional.has(index));
       table.foreignKeys.sort(
         (a, b) => position(table, a.columns[0]) - position(table, b.columns[0])
       );
     }
-    return { tables: [...tables.values()] };
+    return { tables: [...tables.values()].sort((a, b) => a.name < b.name ? -1 : 1) };
   } finally {
     await db.end();
   }
@@ -41125,7 +41201,7 @@ var readers = {
 function bytes(x, i, end) {
   return Buffer.from(x.subarray(i, end));
 }
-function binaryArray(read2) {
+function binaryArray(read3) {
   return function(x, i) {
     const dims = int32(x, i);
     if (dims === 0)
@@ -41148,7 +41224,7 @@ function binaryArray(read2) {
         if (length === -1) {
           xs[k] = null;
         } else {
-          xs[k] = read2(x, at);
+          xs[k] = read3(x, at);
           at += length;
         }
       }
@@ -42547,15 +42623,15 @@ async function Socket(options, host, port2, track = noop2) {
   const raw = options.socket ? await options.socket(options, host, port2) : await connect2(options, host, port2, track);
   return wrap(raw, host);
 }
-function secureOptions(ssl) {
-  return ssl === "require" || ssl === "allow" || ssl === "prefer" ? workers ? {} : { rejectUnauthorized: false } : typeof ssl === "object" ? context3(ssl) : {};
+function secureOptions(ssl2) {
+  return ssl2 === "require" || ssl2 === "allow" || ssl2 === "prefer" ? workers ? {} : { rejectUnauthorized: false } : typeof ssl2 === "object" ? context3(ssl2) : {};
 }
-function context3(ssl) {
-  if (!node || ssl.secureContext || !ssl.ca)
-    return ssl;
-  const values2 = { ...ssl };
-  let last = contexts.get(ssl);
-  last && same(values2, last.values) || contexts.set(ssl, last = { values: values2, secureContext: import_tls.default.createSecureContext(values2) });
+function context3(ssl2) {
+  if (!node || ssl2.secureContext || !ssl2.ca)
+    return ssl2;
+  const values2 = { ...ssl2 };
+  let last = contexts.get(ssl2);
+  last && same(values2, last.values) || contexts.set(ssl2, last = { values: values2, secureContext: import_tls.default.createSecureContext(values2) });
   return { ...values2, secureContext: last.secureContext };
 }
 function same(a, b) {
@@ -42837,14 +42913,14 @@ function attempt(options, host, port2, signal) {
 async function negotiate(socket, options) {
   if (!secured(options) || socket.negotiated)
     return;
-  const ssl = options.ssl, tls2 = secureOptions(ssl);
+  const ssl2 = options.ssl, tls2 = secureOptions(ssl2);
   if (options.sslnegotiation === "direct")
     return socket.upgrade({ ...tls2, ALPNProtocols: ["postgresql"] });
   const answer = new Promise((r) => socket.ondata = (x) => r(x[0]));
   socket.write(SSLRequest());
   if (await answer === S2)
     return socket.upgrade(tls2);
-  if (ssl !== "prefer" && ssl !== "allow")
+  if (ssl2 !== "prefer" && ssl2 !== "allow")
     throw Errors.generic("SSL_NOT_SUPPORTED", "The server does not support SSL connections");
 }
 function cancel2(options, host, port2, { pid, secret }) {
@@ -43146,15 +43222,15 @@ function Connection(ready, options, events) {
     else if (blocker || pending.length)
       pending.push(x);
     else
-      return write2(x), schedule();
+      return write(x), schedule();
     release();
   }
   function release() {
     while (!blocker && pending.length && pending[0] !== fence)
-      write2(pending.shift());
+      write(pending.shift());
     schedule();
   }
-  function write2(x) {
+  function write(x) {
     if (x.kind === "local" && sent.length === 0)
       return queueMicrotask(() => settle(x));
     const mark = out.length;
@@ -44169,12 +44245,12 @@ function key(name) {
 function own2(row, name, value2) {
   Object.defineProperty(row, name, { value: value2, writable: true, enumerable: true, configurable: true });
 }
-function Exchange(kind, query2, lease, write2) {
+function Exchange(kind, query2, lease, write) {
   return {
     kind,
     query: query2,
     lease,
-    write: write2,
+    write,
     trace: query2 && query2.trace || null,
     statement: null,
     text: "",
@@ -45907,10 +45983,10 @@ function certificates(query2) {
   Object.keys(files).length && !query2.ssl && (query2.ssl = process.env.PGSSLMODE || process.env.PGSSL || "require");
   return files;
 }
-function withCertificates(ssl, files) {
-  if (!ssl || ssl === "disable" || !Object.keys(files).length)
-    return ssl;
-  return typeof ssl === "object" ? { ...files, ...ssl } : ssl === true || ssl === "true" || ssl === "verify-full" ? files : files.ca ? { ...files, checkServerIdentity: () => void 0 } : { ...files, rejectUnauthorized: false };
+function withCertificates(ssl2, files) {
+  if (!ssl2 || ssl2 === "disable" || !Object.keys(files).length)
+    return ssl2;
+  return typeof ssl2 === "object" ? { ...files, ...ssl2 } : ssl2 === true || ssl2 === "true" || ssl2 === "verify-full" ? files : files.ca ? { ...files, checkServerIdentity: () => void 0 } : { ...files, rejectUnauthorized: false };
 }
 function tsa(o, url, env) {
   const x = o.target_session_attrs || url.searchParams.get("target_session_attrs") || env.PGTARGETSESSIONATTRS;
@@ -46015,18 +46091,27 @@ var SHORT_TYPES = [
   [/^time\b(.*) with time zone/, "timetz$1"],
   [/^time\b(.*) without time zone/, "time$1"]
 ];
-var shortType = (type) => SHORT_TYPES.reduce((short, [pattern, replacement]) => short.replace(pattern, replacement), type);
+var shortType2 = (type) => SHORT_TYPES.reduce((short, [pattern, replacement]) => short.replace(pattern, replacement), type);
+function postgresSsl(connection2) {
+  if (connection2.ssl === void 0) return false;
+  if (connection2.ssl === "require") return { rejectUnauthorized: false };
+  return {
+    rejectUnauthorized: true,
+    ...connection2.ca ? { ca: connection2.ca } : {},
+    ...connection2.ssl === "verify-ca" ? { checkServerIdentity: () => void 0 } : {}
+  };
+}
 async function readPostgres(connection2, options = {}) {
   const schemas = options.schemas ?? ["public"];
   const qualify = schemas.length > 1;
-  const isExcluded = excluder(options.exclude);
+  const isDrawn = tableFilter(options.include, options.exclude);
   const sql = src_default({
     host: connection2.host,
     port: connection2.port,
     database: connection2.database,
     username: connection2.user,
     password: connection2.password,
-    ssl: connection2.ssl ? "require" : false,
+    ssl: postgresSsl(connection2),
     max: 1
   });
   try {
@@ -46034,26 +46119,38 @@ async function readPostgres(connection2, options = {}) {
       SELECT c.oid::text AS oid, n.nspname AS schema, c.relname AS name
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE c.relkind IN ('r', 'p') AND NOT c.relispartition AND n.nspname = ANY(${schemas})`;
-    const tables = tableRows.filter((row) => !isExcluded(row.name, `${row.schema}.${row.name}`));
+    const tables = tableRows.filter((row) => isDrawn(row.name, `${row.schema}.${row.name}`));
     const oids = tables.map((row) => row.oid);
     const [columnRows, constraintRows, indexRows] = await Promise.all([
       sql`
         SELECT a.attrelid::text AS table, a.attnum AS position, a.attname AS name,
                format_type(a.atttypid, a.atttypmod) AS type, NOT a.attnotnull AS nullable,
                (SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
-                FROM pg_enum e WHERE e.enumtypid = a.atttypid) AS values
+                FROM pg_enum e WHERE e.enumtypid = a.atttypid) AS values,
+               col_description(a.attrelid, a.attnum) AS comment
         FROM pg_attribute a
         WHERE a.attrelid::text = ANY(${oids}) AND a.attnum > 0 AND NOT a.attisdropped
         ORDER BY a.attnum`,
       sql`
-        SELECT conrelid::text AS table, contype AS kind, conkey AS columns,
-               confrelid::text AS references, confkey AS referenced
-        FROM pg_constraint
-        WHERE conrelid::text = ANY(${oids}) AND contype IN ('p', 'f')
-        ORDER BY conkey[1], conname`,
+        SELECT c.conrelid::text AS table, c.contype AS kind,
+               ARRAY(SELECT a.attname::text FROM unnest(c.conkey) WITH ORDINALITY k(n, o)
+                     JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.n
+                     ORDER BY k.o) AS columns,
+               NULLIF(c.confrelid, 0)::text AS references,
+               (SELECT n.nspname || '.' || r.relname FROM pg_class r
+                JOIN pg_namespace n ON n.oid = r.relnamespace WHERE r.oid = c.confrelid) AS qualified,
+               ARRAY(SELECT a.attname::text FROM unnest(c.confkey) WITH ORDINALITY k(n, o)
+                     JOIN pg_attribute a ON a.attrelid = c.confrelid AND a.attnum = k.n
+                     ORDER BY k.o) AS referenced
+        FROM pg_constraint c
+        WHERE c.conrelid::text = ANY(${oids}) AND c.contype IN ('p', 'f')
+        ORDER BY c.conkey[1], c.conname`,
       sql`
         SELECT i.indrelid::text AS table, c.relname AS name, i.indisunique AS unique,
-               i.indkey::int2[] AS columns
+               i.indpred IS NOT NULL AS partial,
+               -- The key columns: a covering index stores its INCLUDE columns after them.
+               ARRAY(SELECT k.n FROM unnest(i.indkey::int2[]) WITH ORDINALITY k(n, o)
+                     WHERE k.o <= i.indnkeyatts ORDER BY k.o) AS columns
         FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
         WHERE i.indrelid::text = ANY(${oids}) AND NOT i.indisprimary
         ORDER BY c.relname`
@@ -46074,24 +46171,24 @@ async function readPostgres(connection2, options = {}) {
       positions.set(row.oid, /* @__PURE__ */ new Map());
     }
     for (const row of columnRows) {
-      const column2 = { name: row.name, type: shortType(row.type), nullable: row.nullable };
-      byOid.get(row.table)?.columns.push(row.values ? { ...column2, values: row.values } : column2);
+      const column2 = { name: row.name, type: shortType2(row.type), nullable: row.nullable };
+      if (row.values) column2.values = row.values;
+      if (row.comment) column2.comment = row.comment;
+      byOid.get(row.table)?.columns.push(column2);
       positions.get(row.table)?.set(row.position, row.name);
     }
     const named = (table, columns2) => columns2.map((position2) => positions.get(table)?.get(position2));
     for (const row of constraintRows) {
       const table = byOid.get(row.table);
       if (row.kind === "p") {
-        table.primaryKey = named(row.table, row.columns);
+        table.primaryKey = row.columns;
         continue;
       }
-      const references = names.get(row.references);
-      if (references === void 0) continue;
       const fk = {
-        columns: named(row.table, row.columns),
+        columns: row.columns,
         references: {
-          table: references,
-          columns: named(row.references, row.referenced)
+          table: names.get(row.references) ?? row.qualified,
+          columns: row.referenced
         }
       };
       table.foreignKeys.push(fk);
@@ -46103,6 +46200,7 @@ async function readPostgres(connection2, options = {}) {
         columns: named(row.table, row.columns),
         unique: row.unique
       };
+      if (row.partial) index.partial = true;
       byOid.get(row.table)?.indexes.push(index);
     }
     return { tables: [...byOid.values()].sort((a, b) => a.name < b.name ? -1 : 1) };
@@ -46140,39 +46238,61 @@ ${block}
 }
 
 // src/run.ts
-function write(path, content) {
-  if ((0, import_node_fs.existsSync)(path) && (0, import_node_fs.readFileSync)(path, "utf8") === content) return false;
-  (0, import_node_fs.mkdirSync)((0, import_node_path.dirname)(path), { recursive: true });
-  (0, import_node_fs.writeFileSync)(path, content);
-  return true;
-}
+var read2 = (path) => (0, import_node_fs.existsSync)(path) ? (0, import_node_fs.readFileSync)(path, "utf8") : void 0;
+var are = (paths) => `${paths.join(" and ")} ${paths.length > 1 ? "are" : "is"}`;
 async function run2(io) {
   try {
     const config = parseInputs((name) => io.getInput(name));
-    const read2 = config.type === "mysql" ? readMysql : readPostgres;
-    const schema = await read2(config.connection, config.read);
+    if (config.connection.password) io.setSecret(config.connection.password);
+    const reader = config.type === "mysql" ? readMysql : readPostgres;
+    const schema = await reader(config.connection, config.read);
     if (schema.tables.length === 0) {
       io.warning(
         `no tables found in ${config.read.schemas?.join(", ")}: is it the right database?`
       );
     }
-    const diagram = render(schema, { indexes: config.indexes });
-    const files = [config.output];
-    let changed = write((0, import_node_path.resolve)(io.cwd, config.output), diagram);
-    if (config.readme) {
-      const path = (0, import_node_path.resolve)(io.cwd, config.readme);
-      const readme = (0, import_node_fs.existsSync)(path) ? (0, import_node_fs.readFileSync)(path, "utf8") : void 0;
-      changed = write(path, embed(readme, diagram)) || changed;
-      files.push(config.readme);
+    const drawn = new Set(schema.tables.map((table) => table.name));
+    for (const table of schema.tables) {
+      for (const fk of table.foreignKeys) {
+        if (drawn.has(fk.references.table)) continue;
+        io.info(
+          `${table.name} (${fk.columns.join(", ")}) references ${fk.references.table}: not drawn`
+        );
+      }
     }
-    io.info(`${schema.tables.length} tables in ${config.output}`);
+    const diagram = render(schema, { indexes: config.indexes });
+    const files = /* @__PURE__ */ new Map();
+    if (config.output === "-") io.print(diagram);
+    else files.set(config.output, diagram);
+    if (config.readme) {
+      files.set(config.readme, embed(read2((0, import_node_path.resolve)(io.cwd, config.readme)), diagram));
+    }
+    const stale = [...files].filter(([path, content]) => read2((0, import_node_path.resolve)(io.cwd, path)) !== content);
+    io.info(
+      `${schema.tables.length} tables in ${config.output === "-" ? "stdout" : config.output}`
+    );
     io.setOutput("diagram", diagram);
     io.setOutput("path", config.output);
-    io.setOutput("changed", String(changed));
+    io.setOutput("changed", String(stale.length > 0));
+    if (config.check) {
+      if (stale.length > 0) {
+        const paths = stale.map(([path]) => path);
+        io.setFailed(`${are(paths)} not the diagram of the database: run erdraw and commit it`);
+      } else {
+        io.info(`${are([...files.keys()])} up to date`);
+      }
+      return;
+    }
+    for (const [path, content] of stale) {
+      const absolute = (0, import_node_path.resolve)(io.cwd, path);
+      (0, import_node_fs.mkdirSync)((0, import_node_path.dirname)(absolute), { recursive: true });
+      (0, import_node_fs.writeFileSync)(absolute, content);
+    }
     if (config.commit) {
-      const committed = await commitFiles(io.cwd, files, config.commit);
+      const paths = [...files.keys()];
+      const committed = await commitFiles(io.cwd, paths, config.commit);
       io.info(
-        committed ? `committed and pushed ${files.join(", ")}` : "nothing changed: no commit"
+        committed ? `committed and pushed ${paths.join(", ")}` : "nothing changed: no commit"
       );
     }
   } catch (error3) {
@@ -46187,5 +46307,7 @@ void run2({
   setOutput: (name, value2) => setOutput(name, value2),
   info: (message) => info(message),
   warning: (message) => warning(message),
-  setFailed: (message) => setFailed(message)
+  setFailed: (message) => setFailed(message),
+  setSecret: (secret) => setSecret(secret),
+  print: (text3) => process.stdout.write(text3)
 });

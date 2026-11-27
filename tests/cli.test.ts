@@ -35,6 +35,7 @@ async function erdraw(args: string[], env: Record<string, string> = {}) {
   const cwd = mkdtempSync(join(tmpdir(), "er-cli-"));
   const said = { cwd, stdout: "", stderr: "", code: -1 };
   said.code = await cli(args, {
+    version: "1.2.3",
     cwd,
     env,
     stdout: (text) => {
@@ -54,8 +55,7 @@ test("--help and --version", async () => {
   expect(help.code).toBe(0);
   expect(help.stdout).toMatch(/^Usage: erdraw \[options\]/);
   expect(help.stdout).toContain("--check");
-  const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-  expect(await erdraw(["-v"])).toMatchObject({ code: 0, stdout: `erdraw ${version}\n` });
+  expect(await erdraw(["-v"])).toMatchObject({ code: 0, stdout: "erdraw 1.2.3\n" });
 });
 
 test("prints the diagram of DATABASE_URL with -o -", async () => {

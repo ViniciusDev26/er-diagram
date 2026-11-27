@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import pkg from "../package.json" with { type: "json" };
 import { run } from "./run.ts";
 
 const HELP = `Usage: erdraw [options]
@@ -57,6 +56,7 @@ const OPTIONS = {
 
 /** Where the command line runs. */
 export interface Terminal {
+  version: string;
   cwd: string;
   env: Record<string, string | undefined>;
   stdout(text: string): void;
@@ -80,7 +80,7 @@ export async function cli(args: string[], terminal: Terminal): Promise<number> {
     return 0;
   }
   if (values.version) {
-    terminal.stdout(`erdraw ${pkg.version}\n`);
+    terminal.stdout(`erdraw ${terminal.version}\n`);
     return 0;
   }
 
